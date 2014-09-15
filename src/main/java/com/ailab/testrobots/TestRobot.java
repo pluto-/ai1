@@ -1,16 +1,16 @@
 package com.ailab.testrobots;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.*;
 import java.util.Map;
 import com.ailab.tools.*;
 
 
 // Jar file for JSON support
+import com.ailab.tools.Path;
 import com.fasterxml.jackson.databind.*;
 
 /**
@@ -47,7 +47,9 @@ public class TestRobot
     * @throws Exception   not caught
     */
    public static void main(String[] args) throws Exception
-   {     
+   {
+
+       Path path = new Path(Files.newInputStream(FileSystems.getDefault().getPath("paths/Path-around-table.json")));
       System.out.println("Creating Robot");
       TestRobot robot = new TestRobot("http://127.0.0.1", 50000);
 
