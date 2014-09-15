@@ -18,9 +18,6 @@ public class Path {
 
         ObjectMapper mapper = new ObjectMapper();
         path = new ArrayList<PathNode>(Arrays.asList(mapper.readValue(stream, PathNode[].class)));
-        for(PathNode pathNode : path) {
-            System.out.println(pathNode);
-        }
     }
 
     public PathNode getNext() {
