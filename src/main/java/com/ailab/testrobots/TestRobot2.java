@@ -1,4 +1,5 @@
-package com.ailab.testrobots; /**
+package com.ailab.testrobots;
+/**
  * TestRobot interfaces to the (real or virtual) robot over a network connection.
  * It uses Java -> JSON -> HttpRequest -> Network -> DssHost32 -> Lokarria(Robulab) -> Core -> MRDS4
  * 
@@ -51,7 +52,7 @@ public class TestRobot2
       int rc = robotcomm.putRequest(dr);
       System.out.println("Response code " + rc);
 
-      for (int i = 0; i < 16; i++)
+      for (int i = 0; i < 250; i++)
       {
          try
          {
@@ -62,8 +63,9 @@ public class TestRobot2
          // ask the robot about its position and angle
          robotcomm.getResponse(lr);
 
-         double angle = getBearingAngle(lr);
-         System.out.println("bearing = " + angle);
+         //double angle = getBearingAngle(lr);
+         double angle = lr.getHeadingAngle();
+         System.out.println("bearing = " + angle * 180 / 3.1415926);
 
          double [] position = getPosition(lr);
          System.out.println("position = " + position[0] + ", " + position[1]); 
@@ -101,7 +103,4 @@ public class TestRobot2
    {
       return lr.getPosition();
    }
-
-
 }
-
