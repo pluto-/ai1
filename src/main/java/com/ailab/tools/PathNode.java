@@ -15,6 +15,16 @@ public class PathNode {
     @JsonProperty("Pose")
     private Pose pose;
 
+    private int index;
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
     public Pose getPose() {
         return pose;
     }

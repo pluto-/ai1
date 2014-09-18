@@ -27,7 +27,7 @@ public class RobotController {
 
     public void start() throws Exception {
 
-        robot.drive(0.1, pursue(path));
+        robot.drive(0.0, pursue(path));
     }
 
     public double pursue(Path path) throws Exception {
@@ -37,11 +37,16 @@ public class RobotController {
         Position vehicle_pos = new Position(((LocalizationResponse)robot.getResponse(new LocalizationResponse())).getPosition());
         System.out.println("VEHICLE POS X: " + vehicle_pos.getX() + " Y: " + vehicle_pos.getY());
 
-        // 2. Find the point on the path closes to the vehicle.
-        PathNode nextPosition = path.getNext();
-        System.out.println("NEXT POS " + nextPosition.toString());
+        // 2. Find the point on the path closes to the vehicle, 3. Find the carrot point.
+        Position carrotPosition = calcCarrotPosition(10.0, vehicle_pos);
 
-        // 3. Find the carrot point.
+        // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
+        // 5. Calculate the curvature of the circular arc.
+        // 6. Determine the steering angle.
+        return angle;
+    }
+
+    private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
         double shortestDistance = 10000.0;
         DistanceData distance;
         int shortestNodeNumber = -1;
@@ -55,13 +60,16 @@ public class RobotController {
             System.out.println("DISTANCE = " + distance + " NODE NUMBER = " + i);
         }
 
-        PathNode nodeToAimFor;
+        PathNode closestPointOnPath = null;
+        PathNode nextNode = null;
         if(type == DistanceData.P0) {
-            nodeToAimFor = path.get(shortestNodeNumber);
+            closestPointOnPath = path.get(shortestNodeNumber);
+            nextNode = path.get(shortestNodeNumber + 1);
         } else if(type == DistanceData.P1) {
-            nodeToAimFor = path.get(shortestNodeNumber + 1);
+            closestPointOnPath = path.get(shortestNodeNumber + 1);
+            nextNode = path.get(shortestNodeNumber + 2);
         } else if(type == DistanceData.SEGMENT) {
-            nodeToAimFor = new PathNode();
+            closestPointOnPath = new PathNode();
             Pose pose = new Pose();
 
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
@@ -69,20 +77,34 @@ public class RobotController {
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
 
             pose.setPosition(position);
-            nodeToAimFor.setPose(pose);
+            closestPointOnPath.setPose(pose);
+            nextNode = path.get(shortestNodeNumber + 1);
         }
 
-        System.out.println("SHORTEST DISTANCE = " + shortestDistance + " NODE NUMBER = " + shortestNodeNumber);
+        return getCarrotPosition(closestPointOnPath.getPose().getPosition(), nextNode, path, lookAhead);
+    }
 
-        double lookAhead = 10.0;
+    public static Position getCarrotPosition(Position current, PathNode next, Path path, double lookAhead) {
 
-        double vehicle_angle = robot.getBearingAngle(new LocalizationResponse());
-        System.out.println("VEHICLE ANGLE = " + vehicle_angle);
+        if(lookAhead <= 0) {
+            return current;
+        } else if(lookAhead >= current.getDistanceTo(next.getPose().getPosition())) {
 
-        // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
-        // 5. Calculate the curvature of the circular arc.
-        // 6. Determine the steering angle.
-        return angle;
+            Position new_current = next.getPose().getPosition();
+            PathNode new_next = path.get(next.getIndex() + 1);
+            double new_lookAhead = lookAhead - current.getDistanceTo(next.getPose().getPosition());
+            System.out.print("Look Ahead is longer beyond X = " + next.getPose().getPosition().getX() + " Y = " + next.getPose().getPosition().getY());
+            System.out.println(". Look Ahead left is = " + new_lookAhead);
+            return getCarrotPosition(new_current, new_next, path, new_lookAhead);
+        } else {
+            Position carrotPosition = new Position();
+            double k = lookAhead / current.getDistanceTo(next.getPose().getPosition());
+            double x = (next.getPose().getPosition().getX() - current.getX()) * k;
+            double y = (next.getPose().getPosition().getY() - current.getY()) * k;
+            carrotPosition.setX(current.getX() + x);
+            carrotPosition.setY(current.getY() + y);
+            return carrotPosition;
+        }
     }
 
     // From algorithm in https://www8.cs.umu.se/kurser/5DV121/HT14/utdelat/Ringdahl%202003%20Master%20thesis.pdf
