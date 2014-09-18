@@ -17,7 +17,7 @@ import java.util.Vector;
  */
 public class RobotController {
 
-    private final static double LOOKAHEAD = 0.1;
+    private final static double LOOKAHEAD = 0.2;
 
     Robot robot;
     Path path;
@@ -29,20 +29,25 @@ public class RobotController {
     }
 
     public void start() throws Exception {
-        double curvature, speed;
-        while(true) {
-            curvature = pursue(path);
-            speed = Math.abs(1.0 / curvature);
-            robot.drive(speed, speed *(pursue(path)));
-            try {
-                Thread.sleep(300);
-            } catch (Exception e) {}
+        double curvature = 0.0, speed;
+
+        try {
+            while (curvature != -10000000) {
+                curvature = pursue(path);
+                speed = Math.abs(1.0 / curvature);
+                robot.drive(speed, speed * (pursue(path)));
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+
+                }
+            }
+        } catch (Exception e) {
+            robot.drive(0,0);
         }
     }
 
     public double pursue(Path path) throws Exception {
-        double angle = 0.0;
-
         // 1. Determine vehicle position.
         LocalizationResponse localizationResponse = new LocalizationResponse();
         localizationResponse = (LocalizationResponse)robot.getResponse(localizationResponse);
@@ -52,10 +57,11 @@ public class RobotController {
         Position carrotPosition = calcCarrotPosition(LOOKAHEAD, currentPosition);
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
-        double destinationX = (carrotPosition.getX() - currentPosition.getX()) * Math.cos(heading) + (carrotPosition.getY() - currentPosition.getY()) * Math.sin(heading);
-        double destinationY = (carrotPosition.getY() - currentPosition.getY()) - (destinationX * Math.sin(heading))/Math.cos(heading);
+        double distance = currentPosition.getDistanceTo(carrotPosition);
+        double alpha = heading + Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY());
+        double deltaX = distance * Math.cos(alpha);
+        double curvature = (2*deltaX / (distance*distance));
         // 5. Calculate the curvature of the circular arc.
-        double curvature = - 2*destinationX / (Math.pow(currentPosition.getDistanceTo(carrotPosition), 2.0));
         System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
 
         // 6. Determine the steering angle.
@@ -103,9 +109,9 @@ public class RobotController {
 
     public static Position getCarrotPosition(Position current, PathNode next, Path path, double lookAhead) {
 
-        if(lookAhead <= 0) {
+        if(lookAhead <= 0  || path.size() <= next.getIndex()) {
             return current;
-        } else if(lookAhead >= current.getDistanceTo(next.getPose().getPosition())) {
+        } else if(lookAhead >= current.getDistanceTo(next.getPose().getPosition()) && path.size() > next.getIndex()) {
 
             Position new_current = next.getPose().getPosition();
             PathNode new_next = path.get(next.getIndex() + 1);

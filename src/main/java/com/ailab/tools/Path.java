@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 public class Path {
 
-    int currentNode;
-    ArrayList<PathNode> path;
+    private int currentNode;
+    private ArrayList<PathNode> path;
 
     public Path(InputStream stream) throws IOException {
 
@@ -27,7 +27,10 @@ public class Path {
     }
 
     public PathNode get(int i) {
-        return path.get(i);
+        if (i < path.size())
+            return path.get(i);
+        else
+            return path.get(path.size() -1);
     }
 
     public int size() {
