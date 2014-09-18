@@ -15,19 +15,15 @@ public class Position
 
     }
 
-    public Position(double x, double y, double z) {
+    public Position(double x, double y) {
         this.x = x;
         this.y = y;
-        this.z = z;
     }
 
    public Position(double pos[])
    {
       this.x = pos[0];
       this.y = pos[1];
-       if(pos.length > 2) {
-           this.z = pos[2];
-       }
    }
 
     public void setX(double x) {
@@ -48,6 +44,14 @@ public class Position
 
     public double getZ() {
         return z;
+    }
+
+    public double[] getXY() {
+        double xy[] = new double[2];
+        xy[0] = x;
+        xy[1] = y;
+
+        return xy;
     }
 
    public double getDistanceTo(Position p)

@@ -1,10 +1,12 @@
 package com.ailab;
 
-import com.ailab.controllers.PurePursuit;
 import com.ailab.controllers.Robot;
 import com.ailab.controllers.RobotController;
+import com.ailab.tools.Position;
+import com.ailab.tools.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.awt.*;
 import java.io.IOException;
 
 /**
@@ -16,6 +18,8 @@ public class Main {
 
 
     public static void main(String args[]) {
+
+
         Robot robot = new Robot("http://127.0.0.1", 50000);
         RobotController controller;
 
@@ -32,6 +36,7 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
     }
 }

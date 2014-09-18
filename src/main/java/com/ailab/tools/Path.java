@@ -25,4 +25,12 @@ public class Path {
         currentNode++;
         return node;
     }
+
+    public PathNode get(int i) {
+        return path.get(i);
+    }
+
+    public int size() {
+        return path.size();
+    }
 }

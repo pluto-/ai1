@@ -159,21 +159,21 @@ public class TestRobot
     * @return response same as parameter
     * @throws Exception
     */
-   public Response getResponse(Response r) throws Exception
-   {
-      URL url = new URL(host + ":" + port + r.getPath());
-      System.out.println(url);
+       public Response getResponse(Response r) throws Exception
+    {
+        URL url = new URL(host + ":" + port + r.getPath());
+        System.out.println(url);
 
-      // open a connection to the web server and then get the resulting data
-      URLConnection connection = url.openConnection();
-      BufferedReader in = new BufferedReader(new InputStreamReader(
-            connection.getInputStream()));
+        // open a connection to the web server and then get the resulting data
+        URLConnection connection = url.openConnection();
+        BufferedReader in = new BufferedReader(new InputStreamReader(
+                connection.getInputStream()));
 
-      // map it to a Java Map
-      Map<String, Object> data = mapper.readValue(in, Map.class);
-      r.setData(data);
+        // map it to a Java Map
+        Map<String, Object> data = mapper.readValue(in, Map.class);
+        r.setData(data);
 
-      in.close();
+        in.close();
 
       return r;
    }

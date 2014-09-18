@@ -40,6 +40,6 @@ public class PathNode {
     }
 
     public String toString() {
-        return ("x: " + pose.getPosition().getX() + " y: " + pose.getPosition().getY() + " x: " + pose.getPosition().getZ());
+        return ("X: " + pose.getPosition().getX() + " Y: " + pose.getPosition().getY());
     }
 }
