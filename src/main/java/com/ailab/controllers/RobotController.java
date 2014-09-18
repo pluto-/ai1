@@ -3,6 +3,7 @@ package com.ailab.controllers;
 import com.ailab.tools.*;
 
 import java.awt.*;
+import java.awt.geom.Arc2D;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.util.Vector;
  */
 public class RobotController {
 
+    private final static double LOOKAHEAD = 0.1;
+
     Robot robot;
     Path path;
 
@@ -26,24 +29,37 @@ public class RobotController {
     }
 
     public void start() throws Exception {
-
-        robot.drive(0.0, pursue(path));
+        double curvature, speed;
+        while(true) {
+            curvature = pursue(path);
+            speed = Math.abs(1.0 / curvature);
+            robot.drive(speed, speed *(pursue(path)));
+            try {
+                Thread.sleep(300);
+            } catch (Exception e) {}
+        }
     }
 
     public double pursue(Path path) throws Exception {
         double angle = 0.0;
 
         // 1. Determine vehicle position.
-        Position vehicle_pos = new Position(((LocalizationResponse)robot.getResponse(new LocalizationResponse())).getPosition());
-        System.out.println("VEHICLE POS X: " + vehicle_pos.getX() + " Y: " + vehicle_pos.getY());
-
+        LocalizationResponse localizationResponse = new LocalizationResponse();
+        localizationResponse = (LocalizationResponse)robot.getResponse(localizationResponse);
+        Position currentPosition = new Position(localizationResponse.getPosition());
+        double heading = localizationResponse.getHeadingAngle();
         // 2. Find the point on the path closes to the vehicle, 3. Find the carrot point.
-        Position carrotPosition = calcCarrotPosition(10.0, vehicle_pos);
+        Position carrotPosition = calcCarrotPosition(LOOKAHEAD, currentPosition);
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
+        double destinationX = (carrotPosition.getX() - currentPosition.getX()) * Math.cos(heading) + (carrotPosition.getY() - currentPosition.getY()) * Math.sin(heading);
+        double destinationY = (carrotPosition.getY() - currentPosition.getY()) - (destinationX * Math.sin(heading))/Math.cos(heading);
         // 5. Calculate the curvature of the circular arc.
+        double curvature = - 2*destinationX / (Math.pow(currentPosition.getDistanceTo(carrotPosition), 2.0));
+        System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
+
         // 6. Determine the steering angle.
-        return angle;
+        return curvature;
     }
 
     private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
@@ -56,8 +72,9 @@ public class RobotController {
             if(shortestDistance > distance.getDistance()) {
                 shortestDistance = distance.getDistance();
                 shortestNodeNumber = i;
+                type = distance.getType();
             }
-            System.out.println("DISTANCE = " + distance + " NODE NUMBER = " + i);
+            //System.out.println("DISTANCE = " + distance + " NODE NUMBER = " + i);
         }
 
         PathNode closestPointOnPath = null;
@@ -80,7 +97,7 @@ public class RobotController {
             closestPointOnPath.setPose(pose);
             nextNode = path.get(shortestNodeNumber + 1);
         }
-
+        System.out.println(closestPointOnPath);
         return getCarrotPosition(closestPointOnPath.getPose().getPosition(), nextNode, path, lookAhead);
     }
 
@@ -93,8 +110,8 @@ public class RobotController {
             Position new_current = next.getPose().getPosition();
             PathNode new_next = path.get(next.getIndex() + 1);
             double new_lookAhead = lookAhead - current.getDistanceTo(next.getPose().getPosition());
-            System.out.print("Look Ahead is longer beyond X = " + next.getPose().getPosition().getX() + " Y = " + next.getPose().getPosition().getY());
-            System.out.println(". Look Ahead left is = " + new_lookAhead);
+            //System.out.print("Look Ahead is longer beyond X = " + next.getPose().getPosition().getX() + " Y = " + next.getPose().getPosition().getY());
+            //System.out.println(". Look Ahead left is = " + new_lookAhead);
             return getCarrotPosition(new_current, new_next, path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();

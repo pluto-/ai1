@@ -18,10 +18,6 @@ public class Path {
 
         ObjectMapper mapper = new ObjectMapper();
         path = new ArrayList<PathNode>(Arrays.asList(mapper.readValue(stream, PathNode[].class)));
-
-        for(int i = 0; i < path.size(); i++) {
-            path.get(i).setIndex(i);
-        }
     }
 
     public PathNode getNext() {

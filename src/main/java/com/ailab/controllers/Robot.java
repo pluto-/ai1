@@ -31,7 +31,7 @@ public class Robot {
 
     public void drive(double linearSpeed, double angularSpeed) throws Exception {
         DifferentialDriveRequest dr = new DifferentialDriveRequest();
-        dr.setAngularSpeed(Math.PI * angularSpeed);
+        dr.setAngularSpeed(angularSpeed);
         dr.setLinearSpeed(linearSpeed);
         int rc = putRequest(dr);
     }

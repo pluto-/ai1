@@ -16,13 +16,14 @@ public class PathNode {
     private Pose pose;
 
     private int index;
+    private static int globalIndex;
+
+    public PathNode() {
+        index = globalIndex++;
+    }
 
     public int getIndex() {
         return index;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
     }
 
     public Pose getPose() {
