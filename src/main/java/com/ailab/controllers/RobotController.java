@@ -17,7 +17,7 @@ import java.util.Vector;
  */
 public class RobotController {
 
-    private final static double LOOKAHEAD = 0.2;
+    private final static double LOOKAHEAD = 1.0;
 
     Robot robot;
     Path path;
@@ -29,10 +29,11 @@ public class RobotController {
     }
 
     public void start() throws Exception {
+
         double curvature = 0.0, speed;
 
         try {
-            while (curvature != -10000000) {
+            while (true) {
                 curvature = pursue(path);
                 speed = Math.abs(1.0 / curvature);
                 robot.drive(speed, speed * (pursue(path)));
@@ -109,7 +110,7 @@ public class RobotController {
 
     public static Position getCarrotPosition(Position current, PathNode next, Path path, double lookAhead) {
 
-        if(lookAhead <= 0  || path.size() <= next.getIndex()) {
+        if(lookAhead <= 0  || path.size() < next.getIndex()) {
             return current;
         } else if(lookAhead >= current.getDistanceTo(next.getPose().getPosition()) && path.size() > next.getIndex()) {
 
