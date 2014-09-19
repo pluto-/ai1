@@ -50,6 +50,17 @@ public class PathNode {
         this.timestamp = timestamp;
     }
 
+    public boolean isGoalNode() {
+        if (index == globalIndex - 1) {
+            System.out.println("aiming for goal node");
+        }
+        return index == globalIndex - 1;
+    }
+
+    public Position getPosition() {
+        return pose.getPosition();
+    }
+
     public String toString() {
         return ("X: " + pose.getPosition().getX() + " Y: " + pose.getPosition().getY());
     }

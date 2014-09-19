@@ -17,10 +17,11 @@ import java.util.Vector;
  */
 public class RobotController {
 
-    private final static double LOOKAHEAD = 1.0;
+    private final static double LOOKAHEAD = 0.6;
 
-    Robot robot;
-    Path path;
+    private Robot robot;
+    private Path path;
+    private int indexOfLastTargetNode = 0;
 
     public RobotController(Robot robot, String pathFile) throws IOException {
         this.robot = robot;
@@ -34,6 +35,10 @@ public class RobotController {
 
         try {
             while (true) {
+                if (indexOfLastTargetNode == path.size() - 1) {
+                    robot.drive(0, 0);
+                    break;
+                }
                 curvature = pursue(path);
                 speed = Math.abs(1.0 / curvature);
                 robot.drive(speed, speed * (pursue(path)));
@@ -70,12 +75,12 @@ public class RobotController {
     }
 
     private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
-        double shortestDistance = 10000.0;
+        double shortestDistance = Integer.MAX_VALUE;
         DistanceData distance;
         int shortestNodeNumber = -1;
         int type = -1;
-        for(int i = 0; i < path.size() - 1; i++) {
-            distance = calcDistance(path.get(i).getPose().getPosition(), path.get(i + 1).getPose().getPosition(), vehicle_pos);
+        for(int i = 0; i < path.size(); i++) {
+            distance = calcDistance(path.get(i).getPosition(), path.get(i + 1).getPosition(), vehicle_pos);
             if(shortestDistance > distance.getDistance()) {
                 shortestDistance = distance.getDistance();
                 shortestNodeNumber = i;
@@ -84,14 +89,18 @@ public class RobotController {
             //System.out.println("DISTANCE = " + distance + " NODE NUMBER = " + i);
         }
 
+        int indexOfStartNode = shortestNodeNumber;
         PathNode closestPointOnPath = null;
-        PathNode nextNode = null;
+        //PathNode nextNode = null;
         if(type == DistanceData.P0) {
             closestPointOnPath = path.get(shortestNodeNumber);
-            nextNode = path.get(shortestNodeNumber + 1);
+            //nextNode = path.get(shortestNodeNumber + 1);
         } else if(type == DistanceData.P1) {
             closestPointOnPath = path.get(shortestNodeNumber + 1);
-            nextNode = path.get(shortestNodeNumber + 2);
+            if (indexOfStartNode < path.size() - 1) {
+                indexOfStartNode++;
+            }
+            //nextNode = path.get(shortestNodeNumber + 2);
         } else if(type == DistanceData.SEGMENT) {
             closestPointOnPath = new PathNode();
             Pose pose = new Pose();
@@ -99,34 +108,35 @@ public class RobotController {
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
             Position p1 = path.get(shortestNodeNumber + 1).getPose().getPosition();
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
-
-            pose.setPosition(position);
+            lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
+            /*pose.setPosition(position);
             closestPointOnPath.setPose(pose);
-            nextNode = path.get(shortestNodeNumber + 1);
+            nextNode = path.get(shortestNodeNumber + 1);*/
         }
-        System.out.println(closestPointOnPath);
-        return getCarrotPosition(closestPointOnPath.getPose().getPosition(), nextNode, path, lookAhead);
+        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
+        //System.out.println(closestPointOnPath);
+        //return getCarrotPosition(closestPointOnPath.getPose().getPosition(), nextNode, path, lookAhead);
     }
 
-    public static Position getCarrotPosition(Position current, PathNode next, Path path, double lookAhead) {
+    public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
 
-        if(lookAhead <= 0  || path.size() < next.getIndex()) {
-            return current;
-        } else if(lookAhead >= current.getDistanceTo(next.getPose().getPosition()) && path.size() > next.getIndex()) {
-
-            Position new_current = next.getPose().getPosition();
-            PathNode new_next = path.get(next.getIndex() + 1);
-            double new_lookAhead = lookAhead - current.getDistanceTo(next.getPose().getPosition());
+        indexOfLastTargetNode = current.getIndex();
+        if(lookAhead == 0  || current.isGoalNode()) {
+            return current.getPosition();
+        } else if(lookAhead >= current.getPosition().getDistanceTo(next.getPose().getPosition()) || next.isGoalNode()) {
+            double new_lookAhead = lookAhead - current.getPosition().getDistanceTo(next.getPosition());
             //System.out.print("Look Ahead is longer beyond X = " + next.getPose().getPosition().getX() + " Y = " + next.getPose().getPosition().getY());
             //System.out.println(". Look Ahead left is = " + new_lookAhead);
-            return getCarrotPosition(new_current, new_next, path, new_lookAhead);
+            return getCarrotPosition(next, path.get(next.getIndex() + 1), path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();
-            double k = lookAhead / current.getDistanceTo(next.getPose().getPosition());
-            double x = (next.getPose().getPosition().getX() - current.getX()) * k;
-            double y = (next.getPose().getPosition().getY() - current.getY()) * k;
-            carrotPosition.setX(current.getX() + x);
-            carrotPosition.setY(current.getY() + y);
+            double k = lookAhead / current.getPosition().getDistanceTo(next.getPosition());
+            double x = current.getPosition().getX() + (next.getPosition().getX() - current.getPosition().getX()) * k;
+            double y = current.getPosition().getY() + (next.getPosition().getY() - current.getPosition().getY()) * k;
+
+            carrotPosition.setX(x);
+            carrotPosition.setY(y);
+
             return carrotPosition;
         }
     }
