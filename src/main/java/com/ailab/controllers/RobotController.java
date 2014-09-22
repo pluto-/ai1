@@ -35,7 +35,7 @@ public class RobotController {
 
     public void start() throws Exception {
 
-        double curvature = 0.0, speed;
+        double curvature, speed;
 
         try {
             while (true) {

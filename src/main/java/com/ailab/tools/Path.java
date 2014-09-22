@@ -10,13 +10,11 @@ import java.util.Arrays;
 
 public class Path {
 
-    private int currentNode;
     private ArrayList<PathNode> path;
     private Logger logger = LogManager.getLogger(this.getClass());
 
     public Path(InputStream stream) throws IOException {
 
-        currentNode = 0;
         path = new ArrayList<PathNode>();
 
         ObjectMapper mapper = new ObjectMapper();
