@@ -24,6 +24,7 @@ public class RobotController {
 
     private Robot robot;
     private Path path;
+    private int indexOfLastClosestNode = 0;
     private int indexOfLastTargetNode = 0;
     private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -73,7 +74,7 @@ public class RobotController {
         double deltaX = distance * Math.cos(alpha);
         double curvature = (2*deltaX / (distance*distance));
         // 5. Calculate the curvature of the circular arc.
-        System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
+       // System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
 
         // 6. Determine the steering angle.
         return curvature;
@@ -84,11 +85,11 @@ public class RobotController {
         DistanceData distance;
         int shortestNodeNumber = -1;
         int type = -1;
-        for(int i = 0; i < path.size(); i++) {
+        for(int i = indexOfLastClosestNode; i < path.size() && path.get(indexOfLastClosestNode).getPosition().getDistanceTo(path.get(i).getPosition()) < lookAhead; i++) {
             distance = calcDistance(path.get(i).getPosition(), path.get(i + 1).getPosition(), vehicle_pos);
             if(shortestDistance > distance.getDistance()) {
                 shortestDistance = distance.getDistance();
-                shortestNodeNumber = i;
+                shortestNodeNumber = indexOfLastClosestNode = i;
                 type = distance.getType();
             }
         }
@@ -103,12 +104,9 @@ public class RobotController {
             lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
         }
         return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
-        //System.out.println(closestPointOnPath);
-        //return getCarrotPosition(closestPointOnPath.getPose().getPosition(), nextNode, path, lookAhead);
     }
 
     public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
-
         indexOfLastTargetNode = current.getIndex();
         if(lookAhead == 0  || path.isLastNode(current)) {
             return current.getPosition();

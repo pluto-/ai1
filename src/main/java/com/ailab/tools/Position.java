@@ -64,4 +64,8 @@ public class Position
    {
       return Math.atan2(p.y - y, p.x - x);
    }
+
+    public String toString() {
+        return "X: " + getX() + " Y: " + getY();
+    }
 }

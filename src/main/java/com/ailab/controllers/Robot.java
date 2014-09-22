@@ -73,7 +73,7 @@ public class Robot {
     public Response getResponse(Response r) throws Exception
     {
         URL url = new URL(host + ":" + port + r.getPath());
-        System.out.println(url);
+        //System.out.println(url);
 
         // open a connection to the web server and then get the resulting data
         URLConnection connection = url.openConnection();
