@@ -1,6 +1,9 @@
 package com.ailab.controllers;
 
 import com.ailab.tools.*;
+import com.sun.org.apache.bcel.internal.generic.LMUL;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.awt.geom.Arc2D;
@@ -22,6 +25,7 @@ public class RobotController {
     private Robot robot;
     private Path path;
     private int indexOfLastTargetNode = 0;
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     public RobotController(Robot robot, String pathFile) throws IOException {
         this.robot = robot;
@@ -42,14 +46,15 @@ public class RobotController {
                 curvature = pursue(path);
                 speed = Math.abs(1.0 / curvature);
                 robot.drive(speed, speed * (pursue(path)));
-                try {
+                /*try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
 
-                }
+                }*/
             }
         } catch (Exception e) {
             robot.drive(0,0);
+            e.printStackTrace();
         }
     }
 
@@ -86,30 +91,16 @@ public class RobotController {
                 shortestNodeNumber = i;
                 type = distance.getType();
             }
-            //System.out.println("DISTANCE = " + distance + " NODE NUMBER = " + i);
         }
 
         int indexOfStartNode = shortestNodeNumber;
-        PathNode closestPointOnPath = null;
-        //PathNode nextNode = null;
-        if(type == DistanceData.P0) {
-            closestPointOnPath = path.get(shortestNodeNumber);
-            //nextNode = path.get(shortestNodeNumber + 1);
-        } else if(type == DistanceData.P1) {
-            closestPointOnPath = path.get(shortestNodeNumber + 1);
+        if(type == DistanceData.P1) {
             indexOfStartNode++;
-            //nextNode = path.get(shortestNodeNumber + 2);
         } else if(type == DistanceData.SEGMENT) {
-            closestPointOnPath = new PathNode();
-            Pose pose = new Pose();
-
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
             Position p1 = path.get(shortestNodeNumber + 1).getPose().getPosition();
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
             lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
-            /*pose.setPosition(position);
-            closestPointOnPath.setPose(pose);
-            nextNode = path.get(shortestNodeNumber + 1);*/
         }
         return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
         //System.out.println(closestPointOnPath);
@@ -119,12 +110,10 @@ public class RobotController {
     public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
 
         indexOfLastTargetNode = current.getIndex();
-        if(lookAhead == 0  || current.isGoalNode()) {
+        if(lookAhead == 0  || path.isLastNode(current)) {
             return current.getPosition();
-        } else if(lookAhead >= current.getPosition().getDistanceTo(next.getPose().getPosition()) || next.isGoalNode()) {
+        } else if(lookAhead >= current.getPosition().getDistanceTo(next.getPosition())) {
             double new_lookAhead = lookAhead - current.getPosition().getDistanceTo(next.getPosition());
-            //System.out.print("Look Ahead is longer beyond X = " + next.getPose().getPosition().getX() + " Y = " + next.getPose().getPosition().getY());
-            //System.out.println(". Look Ahead left is = " + new_lookAhead);
             return getCarrotPosition(next, path.get(next.getIndex() + 1), path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();

@@ -1,6 +1,8 @@
 package com.ailab.tools;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * Created by Patrik on 2014-09-15.
@@ -17,6 +19,7 @@ public class PathNode {
 
     private int index;
     private static int globalIndex = 0;
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     public PathNode() {
         index = globalIndex++;
@@ -48,13 +51,6 @@ public class PathNode {
 
     public void setTimestamp(int timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public boolean isGoalNode() {
-        if (index == globalIndex) {
-            System.out.println("aiming for goal node");
-        }
-        return index == globalIndex;
     }
 
     public Position getPosition() {
