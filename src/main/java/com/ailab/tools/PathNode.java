@@ -19,7 +19,7 @@ public class PathNode {
 
     private int index;
     private static int globalIndex = 0;
-    private Logger logger = LogManager.getLogger(this.getClass());
+    static final Logger logger = LogManager.getLogger(PathNode.class.getName());
 
     public PathNode() {
         index = globalIndex++;

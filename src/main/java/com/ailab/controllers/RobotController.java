@@ -26,7 +26,7 @@ public class RobotController {
     private Path path;
     private int indexOfLastClosestNode = 0;
     private int indexOfLastTargetNode = 0;
-    private Logger logger = LogManager.getLogger(this.getClass());
+    static final Logger logger = LogManager.getLogger(RobotController.class.getName());
 
     public RobotController(Robot robot, String pathFile) throws IOException {
         this.robot = robot;
@@ -41,8 +41,15 @@ public class RobotController {
         try {
             while (true) {
                 if (indexOfLastTargetNode == path.size() - 1) {
-                    robot.drive(0, 0);
-                    break;
+
+                    LocalizationResponse localizationResponse = new LocalizationResponse();
+                    robot.getResponse(localizationResponse);
+                    double distance = new Position(localizationResponse.getPosition()).getDistanceTo(path.get(path.size() - 1).getPosition());
+                    if (distance < 0.05) {
+                        logger.error("distance to goal: " + distance);
+                        robot.drive(0, 0);
+                        break;
+                    }
                 }
                 curvature = pursue(path);
                 speed = Math.abs(1.0 / curvature);
@@ -85,7 +92,7 @@ public class RobotController {
         DistanceData distance;
         int shortestNodeNumber = -1;
         int type = -1;
-        for(int i = indexOfLastClosestNode; i < path.size() && path.get(indexOfLastClosestNode).getPosition().getDistanceTo(path.get(i).getPosition()) < lookAhead; i++) {
+        for(int i = indexOfLastClosestNode; i < path.size() && path.get(indexOfLastClosestNode).getPosition().getDistanceTo(path.get(i).getPosition()) < 2*lookAhead; i++) {
             distance = calcDistance(path.get(i).getPosition(), path.get(i + 1).getPosition(), vehicle_pos);
             if(shortestDistance > distance.getDistance()) {
                 shortestDistance = distance.getDistance();
