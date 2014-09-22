@@ -11,7 +11,7 @@ import java.util.Arrays;
 public class Path {
 
     private ArrayList<PathNode> path;
-    private Logger logger = LogManager.getLogger(this.getClass());
+    static final Logger logger = LogManager.getLogger(Path.class.getName());
 
     public Path(InputStream stream) throws IOException {
 
