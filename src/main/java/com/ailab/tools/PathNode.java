@@ -16,7 +16,7 @@ public class PathNode {
     private Pose pose;
 
     private int index;
-    private static int globalIndex;
+    private static int globalIndex = 0;
 
     public PathNode() {
         index = globalIndex++;
@@ -51,10 +51,10 @@ public class PathNode {
     }
 
     public boolean isGoalNode() {
-        if (index == globalIndex - 1) {
+        if (index == globalIndex) {
             System.out.println("aiming for goal node");
         }
-        return index == globalIndex - 1;
+        return index == globalIndex;
     }
 
     public Position getPosition() {

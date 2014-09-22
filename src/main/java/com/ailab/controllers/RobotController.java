@@ -97,9 +97,7 @@ public class RobotController {
             //nextNode = path.get(shortestNodeNumber + 1);
         } else if(type == DistanceData.P1) {
             closestPointOnPath = path.get(shortestNodeNumber + 1);
-            if (indexOfStartNode < path.size() - 1) {
-                indexOfStartNode++;
-            }
+            indexOfStartNode++;
             //nextNode = path.get(shortestNodeNumber + 2);
         } else if(type == DistanceData.SEGMENT) {
             closestPointOnPath = new PathNode();
