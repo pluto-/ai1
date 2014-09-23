@@ -19,7 +19,7 @@ public class LocalizationResponse implements Response
       Map<String, Object> pose = (Map<String, Object>)data.get("Pose");
       Map<String, Object> orientation = (Map<String, Object>)pose.get("Orientation");
 
-      double w =  (Double)orientation.get("W");      
+      double w =  (Double)orientation.get("W");
       double x =  (Double)orientation.get("X");
       double y =  (Double)orientation.get("Y");
       double z =  (Double)orientation.get("Z");

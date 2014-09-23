@@ -40,6 +40,12 @@ public class RobotController {
 
         try {
             while (true) {
+
+                LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
+                robot.getResponse(laserPropertiesResponse);
+                //System.out.println("Orientation = " + laserPropertiesResponse.getOrientation()[0] + " " + laserPropertiesResponse.getOrientation()[1] + " " + laserPropertiesResponse.getOrientation()[2] + " " + laserPropertiesResponse.getOrientation()[3]);
+                System.out.println(laserPropertiesResponse.getStartAngle());
+
                 if (indexOfLastTargetNode == path.size() - 1) {
 
                     LocalizationResponse localizationResponse = new LocalizationResponse();
