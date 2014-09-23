@@ -1,5 +1,9 @@
 package com.ailab.controllers;
 
+import com.ailab.tools.Position;
+
+import java.util.*;
+
 /**
  * Created by Jonas on 2014-09-22.
  */
@@ -9,81 +13,123 @@ public class VFHPlus {
     public static final double ROBOT_RADIUS = 0.003;
     public static final double d_s = 0.001;
     public static final double ENLARGEMENT_RADIUS = ROBOT_RADIUS + d_s;
-    public static final int NO_OF_SECTORS = 45;
+    public static final int NO_OF_SECTORS = 5;
     public static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
+    public static final double thresholdLow = 0.3;
+    public static final double thresholdHigh = 0.7;
 
-    public double[] buildPolarHistogram(double distanceToCarrotPoint, double distances[], double angle_increment, double start_angle, double vehicle_angle) {
+
+    public double getSteeringDirection(Map<Integer, Integer> binaryHistogram, double carrotPointAngle) {
+        Object[] objectKeys = binaryHistogram.keySet().toArray();
+        List<Integer> sortedKeys = Arrays.asList(Arrays.copyOf(objectKeys, objectKeys.length, Integer[].class));
+        Collections.sort(sortedKeys);
+        ArrayList<Integer> keys = new ArrayList<Integer>(sortedKeys);
+        ArrayList<CandidateDirection> candidateDirections = new ArrayList<CandidateDirection>();
+
+        int index = 0;
+        Integer startSector = null;
+        while (index < keys.size()) {
+            if (binaryHistogram.get(index) == 0) {
+                if(startSector == null) {
+                    startSector = index;
+                }
+            } else {
+                if(startSector != null) {
+
+                    candidateDirections.add(new CandidateDirection(startSector, index - 1));
+                    startSector = null;
+                }
+            }
+            index++;
+        }
+        if (startSector != null) {
+            candidateDirections.add(new CandidateDirection(startSector, keys.size() - 1));
+        }
+
+
+
+        return 0;
+    }
+
+    public static Map<Integer, Integer> buildBinaryHistogram(Map<Integer, Double> histogram) {
+        Object[] objectKeys = histogram.keySet().toArray();
+        List<Integer> sortedKeys = Arrays.asList(Arrays.copyOf(objectKeys, objectKeys.length, Integer[].class));
+        Collections.sort(sortedKeys);
+        ArrayList<Integer> keys = new ArrayList<Integer>(sortedKeys);
+
+        Map<Integer, Integer> binaryHistogram = new HashMap<Integer, Integer>();
+        for (Integer key : keys) {
+            double magnitude = histogram.get(key);
+            if(magnitude > thresholdHigh) {
+                binaryHistogram.put(key, 1);
+            } else if(magnitude < thresholdLow) {
+                binaryHistogram.put(key, 0);
+            } else {
+                Integer previousMagnitude = binaryHistogram.get(key - 1);
+                binaryHistogram.put(key, (previousMagnitude == null) ? 0 : previousMagnitude);
+            }
+        }
+
+        return binaryHistogram;
+    }
+
+    public static Map<Integer, Double> buildPolarHistogram(double distanceToCarrotPoint, double distances[], double angle_increment, double start_angle, double vehicle_angle) {
 
         double d_max = distanceToCarrotPoint;
-        double sector_magnitude[] = new double[NO_OF_SECTORS];
+        Map<Integer, Double> sector_magnitude = new HashMap<Integer, Double>();
         double b = a / d_max;
         double enlargement_angle;
         double direction_to_obstacle;
 
-        double magnitudes[] = new double[distances.length];
 
-        for(int i = 0; i < magnitudes.length; i++) {
+        for(int i = 0; i < distances.length; i++) {
             if(distances[i] <= d_max) {
-                magnitudes[i] = a - (b*distances[i]);
+                double magnitude = a - (b*distances[i]);
                 enlargement_angle = Math.asin(ENLARGEMENT_RADIUS / distances[i]);
                 direction_to_obstacle = start_angle + (i*angle_increment);
 
-                double min_obstacle_angle = direction_to_obstacle - enlargement_angle;
-                double max_obstacle_angle = direction_to_obstacle + enlargement_angle;
-
-                double sector_min_angle;
-                double sector_max_angle;
-                for(int k = 0; k < NO_OF_SECTORS; k++) {
-                    sector_min_angle = k*READS_PER_SECTOR*angle_increment;
-                    sector_max_angle = (k+1)*READS_PER_SECTOR*angle_increment;
-
-                    
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public double[] buildPolarHistogram2(double distanceToCarrotPoint, double distances[], double angle_increment, double start_angle, double vehicle_angle) {
-
-        double d_max = distanceToCarrotPoint;
-        double polarHistogram[] = new double[NO_OF_SECTORS];
-        double b = a / d_max;
-        double enlargement_angle[] = new double[distances.length];
-        double direction_to_obstacle[] = new double[distances.length];
-
-        double magnitudes[] = new double[distances.length];
-
-        for(int i = 0; i < magnitudes.length; i++) {
-            magnitudes[i] = a - (b*distances[i]);
-            enlargement_angle[i] = Math.asin(ENLARGEMENT_RADIUS / distances[i]);
-            direction_to_obstacle[i] = start_angle + (i*angle_increment) + vehicle_angle;
-        }
-
-        int h_prime = 0;
-        double max_magnitude = 0.0;
-        double alpha = READS_PER_SECTOR * angle_increment;
-
-        for(int k = 0; k < NO_OF_SECTORS; k++) {
-            max_magnitude = 0.0;
-            h_prime = 0;
-            for(int j = 0; j < READS_PER_SECTOR; j++) {
-                if((max_magnitude < magnitudes[k*READS_PER_SECTOR + j]) && (distances[k*READS_PER_SECTOR + j] < d_max)) {
-                    max_magnitude = magnitudes[k*READS_PER_SECTOR + j];
-
-                    if((k*alpha >= direction_to_obstacle[k*READS_PER_SECTOR + j] - enlargement_angle[k*READS_PER_SECTOR + j]) ||
-                            (k*alpha <= direction_to_obstacle[k*READS_PER_SECTOR + j] + enlargement_angle[k*READS_PER_SECTOR + j])) {
-                        h_prime = 1;
-                    } else {
-                        h_prime = 0;
+                int startSector = (int)((direction_to_obstacle - enlargement_angle) / (READS_PER_SECTOR * angle_increment));
+                int endSector = (int) ((direction_to_obstacle + enlargement_angle) / (READS_PER_SECTOR * angle_increment)) + 1;
+                for(int k = startSector; k < endSector; k++) {
+                    if (!sector_magnitude.containsKey(k) || (sector_magnitude.get(k) < magnitude)) {
+                        sector_magnitude.put(k, magnitude);
                     }
                 }
             }
-            polarHistogram[k] = max_magnitude * h_prime;
         }
 
+        return sector_magnitude;
+    }
 
-        return null;
+    private class CandidateDirection {
+
+        public static final int sMAX = 4;
+        private int leftBorderSector;
+        private int rightBorderSector;
+
+        public CandidateDirection (int leftBorderSector, int rightBorderSector) {
+            this.leftBorderSector = leftBorderSector;
+            this.rightBorderSector = rightBorderSector;
+        }
+
+        public void setLeftBorderSector(int leftBorderSector) {
+            this.leftBorderSector = leftBorderSector;
+        }
+
+        public void setRightBorderSector(int rightBorderSector) {
+            this.rightBorderSector = rightBorderSector;
+        }
+
+        public int getRightBorderSector () {
+            return rightBorderSector;
+        }
+
+        public int getLeftBorderSector() {
+            return leftBorderSector;
+        }
+
+        public boolean isWideValley() {
+            return (leftBorderSector - rightBorderSector) > sMAX;
+        }
     }
 }

@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -38,14 +41,21 @@ public class RobotController {
 
         double curvature, speed;
 
+        LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
+        robot.getResponse(laserPropertiesResponse);
+
+
         try {
             while (true) {
-
-                LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
-                robot.getResponse(laserPropertiesResponse);
-                //System.out.println("Orientation = " + laserPropertiesResponse.getOrientation()[0] + " " + laserPropertiesResponse.getOrientation()[1] + " " + laserPropertiesResponse.getOrientation()[2] + " " + laserPropertiesResponse.getOrientation()[3]);
-                System.out.println(laserPropertiesResponse.getStartAngle());
-
+                LaserEchoesResponse laserEchoesResponse  = new LaserEchoesResponse();
+                robot.getResponse(laserEchoesResponse);
+                Map<Integer, Double> stuff = VFHPlus.buildPolarHistogram(1.0, laserEchoesResponse.getEchoes(), laserPropertiesResponse.getAngleIncrement(), laserPropertiesResponse.getStartAngle(), 0);
+                Object[] keys = stuff.keySet().toArray();
+                for (int i = 0; i < keys.length; i++) {
+                    logger.error("sector " + keys[i] + " magnitude: " + stuff.get(keys[i]));
+                }
+                logger.error("-----------------------------------------------------");
+                /*
                 if (indexOfLastTargetNode == path.size() - 1) {
 
                     LocalizationResponse localizationResponse = new LocalizationResponse();
@@ -60,11 +70,12 @@ public class RobotController {
                 curvature = pursue(path);
                 speed = Math.abs(1.0 / curvature);
                 robot.drive(speed, speed * (pursue(path)));
-                /*try {
-                    Thread.sleep(100);
+                */
+                try {
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
 
-                }*/
+                }
             }
         } catch (Exception e) {
             robot.drive(0,0);
