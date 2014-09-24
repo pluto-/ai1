@@ -19,7 +19,7 @@ public class VFHPlus {
     public static final double thresholdHigh = 0.7;
 
 
-    public double getSteeringDirection(Map<Integer, Integer> binaryHistogram, double carrotPointAngle) {
+    public double getSteeringDirection(Map<Integer, Integer> binaryHistogram, double goalDirection) {
         Object[] objectKeys = binaryHistogram.keySet().toArray();
         List<Integer> sortedKeys = Arrays.asList(Arrays.copyOf(objectKeys, objectKeys.length, Integer[].class));
         Collections.sort(sortedKeys);
@@ -35,8 +35,8 @@ public class VFHPlus {
                 }
             } else {
                 if(startSector != null) {
-
-                    candidateDirections.add(new CandidateDirection(startSector, index - 1));
+                    CandidateDirection candidateDirection = new CandidateDirection(startSector, index - 1);
+                    candidateDirections.add(candidateDirection);
                     startSector = null;
                 }
             }
@@ -45,6 +45,8 @@ public class VFHPlus {
         if (startSector != null) {
             candidateDirections.add(new CandidateDirection(startSector, keys.size() - 1));
         }
+
+
 
 
 
