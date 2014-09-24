@@ -23,7 +23,7 @@ import java.util.Vector;
  */
 public class RobotController {
 
-    private final static double LOOKAHEAD = 1.6;
+    private final static double LOOKAHEAD = 0.1;
 
     private Robot robot;
     private Path path;
@@ -40,7 +40,7 @@ public class RobotController {
 
     public void start() throws Exception {
 
-        double curvature, speed;
+        double angularSpeed, speed;
 
 
         try {
@@ -56,9 +56,9 @@ public class RobotController {
                         break;
                     }
                 }
-                curvature = pursue(path);
-                speed = (curvature == 0 ? 1 : Math.abs(1.0 / curvature));
-                robot.drive(speed, speed * curvature);
+                angularSpeed = pursue(path);
+                speed = (angularSpeed == 0 ? 1 : Math.abs(1.0 / angularSpeed));
+                robot.drive(speed, speed * angularSpeed);
                 /*try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -82,9 +82,9 @@ public class RobotController {
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
         double distance = currentPosition.getDistanceTo(carrotPosition);
-        double alpha = heading + Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY());
+        double alpha = -heading + Math.atan2(carrotPosition.getY() - currentPosition.getY(), carrotPosition.getX() - currentPosition.getX());
 
-/*
+        /*
         LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
         robot.getResponse(laserPropertiesResponse);
         VFHPlus vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getAngleIncrement());
@@ -94,7 +94,7 @@ public class RobotController {
         //Map<Integer, Double> stuff = vfhPlus.buildPolarHistogram(1.0, laserEchoesResponse.getEchoes(), laserPropertiesResponse.getStartAngle(), 0);
 
         Double vfhAngle = vfhPlus.calculateSteeringDirection(distance,laserEchoesResponse.getEchoes(),heading, alpha);
-        if(delay++ > 300) {
+        if(delay++ > 500) {
             logger.error("VFH+ angle: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit angle: " + alpha);
             logger.error("VFH+ curvature: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit curvature: " + (2 * distance * Math.cos(alpha) / (distance * distance)));
             delay = 0;
@@ -112,19 +112,19 @@ public class RobotController {
 
             // 6. Determine the steering angle.
             return curvature;
-        }*/
-
+        }
+        */
         if (alpha > Math.PI)
             alpha = alpha -2*Math.PI;
         else if (alpha < -Math.PI)
             alpha = alpha + 2*Math.PI;
-
+        /*
         if(delay++ > 500) {
-            logger.error("Carrot Point: " + carrotPosition + " alpha: " + alpha + "heading: " + heading);
+            logger.error("Carrot Point: " + carrotPosition + " alpha: " + alpha + " heading: " + heading);
             logger.error("alpha - heading: " + (alpha - heading) + " alpha + heading: " + (alpha + heading));
             delay = 0;
-        }
-        return alpha + heading;
+        }*/
+        return alpha;
     }
 
     private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
