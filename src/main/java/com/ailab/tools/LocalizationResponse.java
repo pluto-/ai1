@@ -46,7 +46,10 @@ public class LocalizationResponse implements Response
       Quaternion q = new Quaternion(e);
       double[] v = q.bearing();
 
-      return Math.atan2(v[1], v[0]);
+       if(((Math.atan2(v[1], v[0]) - Math.PI / 2)) < -Math.PI) {
+           return Math.PI + (Math.PI + (Math.atan2(v[1], v[0]) - Math.PI / 2));
+       }
+      return (Math.atan2(v[1], v[0]) - Math.PI / 2);
    }
 
    public int getStatus()

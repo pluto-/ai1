@@ -7,9 +7,11 @@ import com.ailab.tools.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
@@ -70,8 +72,7 @@ public class Robot {
      * @return response same as parameter
      * @throws Exception
      */
-    public Response getResponse(Response r) throws Exception
-    {
+    public Response getResponse(Response r) throws IOException {
         URL url = new URL(host + ":" + port + r.getPath());
         //System.out.println(url);
 
