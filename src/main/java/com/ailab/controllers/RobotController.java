@@ -1,29 +1,21 @@
 package com.ailab.controllers;
 
 import com.ailab.tools.*;
-import com.sun.org.apache.bcel.internal.generic.LMUL;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.awt.*;
-import java.awt.geom.Arc2D;
-import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
 
 /**
  * Created by Jonas on 2014-09-15.
  */
-public class RobotController {
+public class RobotController implements Runnable {
 
-    private final static double LOOKAHEAD = 0.1;
+    private final static double LOOK_AHEAD = 1;
+    private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
     private Path path;
@@ -31,16 +23,25 @@ public class RobotController {
     private int indexOfLastTargetNode = 0;
     static final Logger logger = LogManager.getLogger(RobotController.class.getName());
     int delay = 0;
+    DrawPath drawPath;
+    VFHPlus vfhPlus;
 
     public RobotController(Robot robot, String pathFile) throws IOException {
         this.robot = robot;
 
         path = new Path(Files.newInputStream(FileSystems.getDefault().getPath(pathFile)));
+        drawPath = new DrawPath(path);
+        LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
+        robot.getResponse(laserPropertiesResponse);
+        vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getEndAngle(), laserPropertiesResponse.getAngleIncrement());
+        Thread thread = new Thread(this);
+        thread.start();
     }
 
     public void start() throws Exception {
 
-        double angularSpeed, speed;
+        double curvature;
+        double speedAndAngularSpeed[];
 
 
         try {
@@ -56,11 +57,17 @@ public class RobotController {
                         break;
                     }
                 }
-                angularSpeed = pursue(path);
-                speed = (angularSpeed == 0 ? 1 : Math.abs(1.0 / angularSpeed));
-                robot.drive(speed, speed * angularSpeed);
+                LocalizationResponse localizationResponse = new LocalizationResponse();
+                robot.getResponse(localizationResponse);
+                //System.out.println("X = " + localizationResponse.getPosition()[0] + " Y = " + localizationResponse.getPosition()[1]);
+                //drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
+                curvature = pursue(path);
+                speedAndAngularSpeed = setSpeedAndAngularSpeed(curvature);
+
+                //speed = (angularSpeed == 0 ? 1 : Math.abs(1.0 / angularSpeed));
+                //robot.drive(speedAndAngularSpeed[0], speedAndAngularSpeed[1]);
                 /*try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
 
                 }*/
@@ -71,32 +78,93 @@ public class RobotController {
         }
     }
 
-    public double pursue(Path path) throws Exception {
+    private double[] setSpeedAndAngularSpeed(double curvature) {
+        // 0 <= speed <= 1.
+        double speed;
+        double angularSpeed;
+
+        if(Math.abs(curvature) > 2) {
+            speed = 0.1;
+            if(curvature < 0)
+                angularSpeed = -1;
+            else
+                angularSpeed = 1;
+        } else {
+            speed = (1 - Math.abs(curvature)/2) / 1;
+            angularSpeed = curvature;
+        }
+        return new double[] {speed, angularSpeed};
+    }
+
+    public double pursue(Path path) throws IOException {
         // 1. Determine vehicle position.
         LocalizationResponse localizationResponse = new LocalizationResponse();
         localizationResponse = (LocalizationResponse)robot.getResponse(localizationResponse);
         Position currentPosition = new Position(localizationResponse.getPosition());
         double heading = localizationResponse.getHeadingAngle();
         // 2. Find the point on the path closes to the vehicle, 3. Find the carrot point.
-        Position carrotPosition = calcCarrotPosition(LOOKAHEAD, currentPosition);
+        Position carrotPosition = calcCarrotPosition(LOOK_AHEAD, currentPosition);
+        drawPath.setGreenPoint(carrotPosition.getX(), carrotPosition.getY());
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
-        double distance = currentPosition.getDistanceTo(carrotPosition);
-        double alpha = -heading + Math.atan2(carrotPosition.getY() - currentPosition.getY(), carrotPosition.getX() - currentPosition.getX());
+        double distanceToCarrotPoint = currentPosition.getDistanceTo(carrotPosition);
+        double directionToCarrotPoint = currentPosition.getBearingTo(carrotPosition);
 
-        /*
-        LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
-        robot.getResponse(laserPropertiesResponse);
-        VFHPlus vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getAngleIncrement());
+
+
         LaserEchoesResponse laserEchoesResponse  = new LaserEchoesResponse();
         robot.getResponse(laserEchoesResponse);
+        double echoes[] = laserEchoesResponse.getEchoes();
+
+        boolean obstacleNearby = false;
+        for(int i = 0; i < echoes.length; i++) {
+            if(echoes[i] <= distanceToCarrotPoint) {
+                obstacleNearby = true;
+                break;
+            }
+        }
+
+        if(obstacleNearby) {
+            double ftcAngle = followTheCarrot(heading, directionToCarrotPoint);
+            Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint,echoes, ftcAngle);
+            if(vfhAngle == null) {
+                logger.error("No valley found. Stopping vehicle...");
+                return 1;
+            }
+            if(ftcAngle != vfhAngle) {
+                //System.out.println("USING VFH+ ANGLE: " + vfhAngle);
+                if(vfhAngle > 0) {
+                    drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
+
+                } else {
+
+                    drawPath.addYellowPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
+                }
+
+                return vfhAngle;
+            }
+            vfhPlus.resetPreviousTargetSector();
+
+        }
+        vfhPlus.resetPreviousTargetSector();
+        return purePursuit(heading, currentPosition, carrotPosition, distanceToCarrotPoint);
+
+
+
+        //double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
+        //Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint,laserEchoesResponse.getEchoes(), ftcAngle);
+        //double purePursuit = purePursuit(heading, currentPosition, carrotPosition, distanceToCarrotPoint);
+        //System.out.println("VFS STEERING DIRECTION = " + vfhAngle);
+        //System.out.println("FOLLOW CARROT DIRECTION = " + ftcAngle);
+
+        //return followTheCarrot(heading, directionToCarrotPoint);
+
 
         //Map<Integer, Double> stuff = vfhPlus.buildPolarHistogram(1.0, laserEchoesResponse.getEchoes(), laserPropertiesResponse.getStartAngle(), 0);
 
-        Double vfhAngle = vfhPlus.calculateSteeringDirection(distance,laserEchoesResponse.getEchoes(),heading, alpha);
-        if(delay++ > 500) {
+        /*if(delay++ > 500) {
             logger.error("VFH+ angle: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit angle: " + alpha);
-            logger.error("VFH+ curvature: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit curvature: " + (2 * distance * Math.cos(alpha) / (distance * distance)));
+            logger.error("VFH+ curvature: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit curvature: " + (2 * distanceToCarrotPoint * Math.cos(alpha) / (distanceToCarrotPoint * distanceToCarrotPoint)));
             delay = 0;
         }
         if (vfhAngle != null && vfhAngle != alpha) {
@@ -105,26 +173,50 @@ public class RobotController {
             return curvature;
 
         } else {
-            double deltaX = distance * Math.cos(alpha);
-            double curvature = (2*deltaX / (distance*distance));
+            double deltaX = distanceToCarrotPoint * Math.cos(alpha);
+            double curvature = (2*deltaX / (distanceToCarrotPoint*distanceToCarrotPoint));
+            return curvature;
             // 5. Calculate the curvature of the circular arc.
             // System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
 
             // 6. Determine the steering angle.
-            return curvature;
-        }
-        */
-        if (alpha > Math.PI)
-            alpha = alpha -2*Math.PI;
-        else if (alpha < -Math.PI)
-            alpha = alpha + 2*Math.PI;
+        }*/
+
+
         /*
         if(delay++ > 500) {
             logger.error("Carrot Point: " + carrotPosition + " alpha: " + alpha + " heading: " + heading);
             logger.error("alpha - heading: " + (alpha - heading) + " alpha + heading: " + (alpha + heading));
             delay = 0;
         }*/
-        return alpha;
+        //return curvature;
+    }
+    private double purePursuit(double heading, Position currentPosition, Position carrotPosition, double distanceToCarrotPoint) {
+        //double alpha = heading + Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY());
+        //double alpha = heading + Math.atan2(carrotPosition.getY() - currentPosition.getY(), carrotPosition.getX() - currentPosition.getX());
+        double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
+
+        //System.out.println("HEADING = " + heading);
+        //System.out.println("ORIENTATION = " + currentPosition.getBearingTo(carrotPosition));
+        //System.out.println("DIFFERENCE = " + (heading - Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY())));
+
+        double deltaX = distanceToCarrotPoint * Math.cos(alpha);
+        double curvature = ((-2)*deltaX / (distanceToCarrotPoint*distanceToCarrotPoint));
+        return curvature;
+    }
+
+    private double followTheCarrot(double heading, double directionToCarrotPoint) {
+        double e = - Math.PI/2 + heading - directionToCarrotPoint;
+        double e_prime = e * PROPORTIONAL_GAIN;
+        double e_0;
+        if (e_prime > Math.PI)
+            e_0 = e - 2*Math.PI;
+        else if (e_prime < -Math.PI)
+            e_0 = e_prime + 2*Math.PI;
+        else
+            e_0 = e_prime;
+
+        return e_0;
     }
 
     private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
@@ -215,5 +307,17 @@ public class RobotController {
             sum += a[i] * b[i];
         }
         return sum;
+    }
+
+    @Override
+    public void run() {
+        while(true) {
+            drawPath.repaint();
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
