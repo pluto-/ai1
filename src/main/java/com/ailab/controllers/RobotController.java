@@ -4,7 +4,6 @@ import com.ailab.tools.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import java.awt.*;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -90,7 +89,7 @@ public class RobotController implements Runnable {
             else
                 angularSpeed = 1;
         } else {
-            speed = (1 - Math.abs(curvature)/2) / 1;
+            speed = Math.abs(1 - Math.abs(curvature) / 2);
             angularSpeed = curvature;
         }
         return new double[] {speed, angularSpeed};

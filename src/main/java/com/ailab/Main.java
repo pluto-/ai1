@@ -3,18 +3,8 @@ package com.ailab;
 import com.ailab.controllers.Robot;
 import com.ailab.controllers.RobotController;
 import com.ailab.controllers.VFHPlus;
-import com.ailab.tools.Path;
-import com.ailab.tools.PathNode;
-import com.ailab.tools.Position;
-import com.ailab.tools.Util;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.swing.*;
-import java.awt.*;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.util.ArrayList;
 
 /**
  * Created by Jonas on 2014-09-15.
@@ -22,20 +12,18 @@ import java.util.ArrayList;
 public class Main {
 
 
-
-
     public static void main(String args[]) {
 
 
         //System.out.println(VFHPlus.NO_OF_BLIND_SECTORS);
-        System.out.println("DELTA " + VFHPlus.calcDeltaSectors(-44 , 44));
+        System.out.println("DELTA " + VFHPlus.calcDeltaSectors(-44, 44));
 
 
         Robot robot = new Robot("http://127.0.0.1", 50000);
         RobotController controller;
 
 
-        if(args.length < 1) {
+        if (args.length < 1) {
             System.out.println("Must specify a path JSON file.");
             System.exit(1);
         }

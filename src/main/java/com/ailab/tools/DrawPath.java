@@ -1,12 +1,8 @@
 package com.ailab.tools;
 
-import com.ailab.controllers.VFHPlus;
-
-import java.lang.*;
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
-import java.util.Map;
 
 public class DrawPath extends Frame {
 

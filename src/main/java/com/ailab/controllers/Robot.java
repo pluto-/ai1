@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
@@ -38,17 +37,16 @@ public class Robot {
         int rc = putRequest(dr);
     }
 
-    public int putRequest(Request r) throws Exception
-    {
+    public int putRequest(Request r) throws Exception {
         URL url = new URL(host + ":" + port + r.getPath());
 
-        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         connection.setDoOutput(true);
 
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
-        connection.setUseCaches (false);
+        connection.setUseCaches(false);
 
         OutputStreamWriter out = new OutputStreamWriter(
                 connection.getOutputStream());
@@ -68,6 +66,7 @@ public class Robot {
 
     /**
      * Get a response from the robot
+     *
      * @param r response to fill in
      * @return response same as parameter
      * @throws Exception
@@ -90,8 +89,7 @@ public class Robot {
         return r;
     }
 
-    double getBearingAngle(LocalizationResponse lr)
-    {
+    double getBearingAngle(LocalizationResponse lr) {
         double e[] = lr.getOrientation();
 
         double angle = 2 * Math.atan2(e[3], e[0]);

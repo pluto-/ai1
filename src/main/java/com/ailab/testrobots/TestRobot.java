@@ -1,17 +1,19 @@
 package com.ailab.testrobots;
 
-import java.io.*;
+import com.ailab.tools.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.Map;
-import com.ailab.tools.*;
-
 
 // Jar file for JSON support
-import com.ailab.tools.Path;
-import com.fasterxml.jackson.databind.*;
 
 /**
  * TestRobot interfaces to the (real or virtual) robot over a network connection.

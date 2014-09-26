@@ -1,39 +1,31 @@
 package com.ailab.tools;
 
-import java.net.URL;
 import java.util.HashMap;
-import java.util.Map;
 
-public class DifferentialDriveRequest implements Request
-{
-   private HashMap<String, Object> data;
+public class DifferentialDriveRequest implements Request {
+    private HashMap<String, Object> data;
 
-   public DifferentialDriveRequest()
-   {
-      data = new HashMap<String, Object>();
+    public DifferentialDriveRequest() {
+        data = new HashMap<String, Object>();
 
-      setLinearSpeed(0);
-      setAngularSpeed(0);
-   }
+        setLinearSpeed(0);
+        setAngularSpeed(0);
+    }
 
-   public void setLinearSpeed(double linearSpeed)
-   {
-      data.put("TargetLinearSpeed", linearSpeed);
-   }
+    public void setLinearSpeed(double linearSpeed) {
+        data.put("TargetLinearSpeed", linearSpeed);
+    }
 
-   public void setAngularSpeed(double angularSpeed)
-   {
-      data.put("TargetAngularSpeed", angularSpeed);
-   }
+    public void setAngularSpeed(double angularSpeed) {
+        data.put("TargetAngularSpeed", angularSpeed);
+    }
 
-   public HashMap<String, Object> getData()
-   {
-      return data;
-   }
+    public HashMap<String, Object> getData() {
+        return data;
+    }
 
-   public String getPath()
-   {
-      return "/lokarria/differentialdrive";
-   }
+    public String getPath() {
+        return "/lokarria/differentialdrive";
+    }
 
 }
