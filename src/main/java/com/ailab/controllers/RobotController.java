@@ -13,6 +13,8 @@ import java.nio.file.Files;
  */
 public class RobotController implements Runnable {
 
+    private static boolean running = true;
+
     private static double LOOK_AHEAD = 1;
     private final static double PROPORTIONAL_GAIN = 1;
 
@@ -44,35 +46,29 @@ public class RobotController implements Runnable {
 
 
         try {
-            while (true) {
+            while (running) {
                 if (indexOfLastTargetNode == path.size() - 1) {
 
                     LocalizationResponse localizationResponse = new LocalizationResponse();
                     robot.getResponse(localizationResponse);
                     double distance = new Position(localizationResponse.getPosition()).getDistanceTo(path.get(path.size() - 1).getPosition());
                     if (distance < 0.2) {
-                        logger.error("distance to goal: " + distance);
+                        logger.error("Goal reached - margin of error: " + distance);
                         robot.drive(0, 0);
+                        running = false;
                         break;
                     }
                 }
                 LocalizationResponse localizationResponse = new LocalizationResponse();
                 robot.getResponse(localizationResponse);
-                //System.out.println("X = " + localizationResponse.getPosition()[0] + " Y = " + localizationResponse.getPosition()[1]);
-                //drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
                 curvature = pursue(path);
                 speedAndAngularSpeed = setSpeedAndAngularSpeed(curvature);
 
-                //speed = (angularSpeed == 0 ? 1 : Math.abs(1.0 / angularSpeed));
                 robot.drive(speedAndAngularSpeed[0], speedAndAngularSpeed[1]);
-                /*try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-
-                }*/
             }
         } catch (Exception e) {
             robot.drive(0,0);
+            running = false;
             e.printStackTrace();
         }
     }
@@ -127,11 +123,10 @@ public class RobotController implements Runnable {
             double ftcAngle = followTheCarrot(heading, directionToCarrotPoint);
             Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint, echoes, ftcAngle);
             if(vfhAngle == null) {
-                logger.error("No valley found. Stopping vehicle...");
+                logger.error("No valley found. Turning sharply...");
                 return 1;
             }
             if(ftcAngle != vfhAngle) {
-                logger.error("USING VFH+ ANGLE: " + vfhAngle + "         VFH - FTC: " + (vfhAngle - ftcAngle));
                 if(vfhAngle > 0) {
                     drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
 
@@ -261,9 +256,14 @@ public class RobotController implements Runnable {
         return sum;
     }
 
+    public void setLookahead(Double lookahead) {
+        LOOK_AHEAD = lookahead;
+        logger.error("Lookahead: " + LOOK_AHEAD);
+    }
+
     @Override
     public void run() {
-        while(true) {
+        while (running) {
             drawPath.repaint();
             try {
                 Thread.sleep(200);
@@ -271,10 +271,5 @@ public class RobotController implements Runnable {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void setLookahead(Double lookahead) {
-        LOOK_AHEAD = lookahead;
-        logger.error("Lookahead: " + LOOK_AHEAD);
     }
 }

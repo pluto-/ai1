@@ -61,9 +61,6 @@ public class VFHPlus {
 
         ArrayList<CandidateValley> candidateValleys = getCandidateValleys(binaryHistogram);
         ArrayList<Integer> candidateDirections = getCandidateDirections(candidateValleys, goalSector);
-        if(candidateDirections.size() > candidateValleys.size()) {
-
-        }
 
         double bestCost = Double.MAX_VALUE;
         Integer bestDirection = null;
@@ -101,7 +98,6 @@ public class VFHPlus {
     private ArrayList<Integer> getCandidateDirections(ArrayList<CandidateValley> candidateValleys, int goalSector) {
 
         ArrayList<Integer> candidateDirections = new ArrayList<Integer>();
-        boolean notReachable = true;
         for (CandidateValley candidateValley: candidateValleys) {
             int leftBorderSector = candidateValley.getLeftBorderSector();
             int rightBorderSector = candidateValley.getRightBorderSector();
@@ -109,15 +105,12 @@ public class VFHPlus {
                 candidateDirections.add(leftBorderSector - sMAX/2);
                 candidateDirections.add(rightBorderSector + sMAX/2);
                 if (leftBorderSector >= goalSector && rightBorderSector <= goalSector) {
-                    notReachable = false;
                     candidateDirections.add(goalSector);
                 }
             } else {
                 candidateDirections.add((leftBorderSector + rightBorderSector) / 2);
             }
         }
-        if (notReachable)
-            System.out.println("Goal sector not reachable");
         return candidateDirections;
     }
 
@@ -176,6 +169,7 @@ public class VFHPlus {
         }
         return binaryHistogram;
     }
+
 
     public  Map<Integer, Double> buildPolarHistogram(double distanceToCarrotPoint, double distances[]) {
 
