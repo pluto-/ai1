@@ -14,7 +14,7 @@ import java.nio.file.Files;
  */
 public class RobotController implements Runnable {
 
-    private final static double LOOK_AHEAD = 1;
+    private final static double LOOK_AHEAD = 2;
     private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
@@ -65,7 +65,7 @@ public class RobotController implements Runnable {
                 speedAndAngularSpeed = setSpeedAndAngularSpeed(curvature);
 
                 //speed = (angularSpeed == 0 ? 1 : Math.abs(1.0 / angularSpeed));
-                //robot.drive(speedAndAngularSpeed[0], speedAndAngularSpeed[1]);
+                robot.drive(speedAndAngularSpeed[0], speedAndAngularSpeed[1]);
                 /*try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -126,13 +126,13 @@ public class RobotController implements Runnable {
 
         if(obstacleNearby) {
             double ftcAngle = followTheCarrot(heading, directionToCarrotPoint);
-            Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint,echoes, ftcAngle);
+            Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint, echoes, ftcAngle);
             if(vfhAngle == null) {
                 logger.error("No valley found. Stopping vehicle...");
                 return 1;
             }
             if(ftcAngle != vfhAngle) {
-                //System.out.println("USING VFH+ ANGLE: " + vfhAngle);
+                logger.error("USING VFH+ ANGLE: " + vfhAngle);
                 if(vfhAngle > 0) {
                     drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
 

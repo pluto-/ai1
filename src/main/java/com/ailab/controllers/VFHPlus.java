@@ -14,9 +14,9 @@ public class VFHPlus {
     public static final int NO_OF_SECTORS = 90;
     public static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
     public static final int NO_OF_BLIND_SECTORS = (int)(NO_OF_SECTORS / 3);
-    public static final double thresholdLow = 0.4;
-    public static final double thresholdHigh = 0.4;
-    public static final int sMAX = 6;
+    public static final double thresholdLow = 0.5;
+    public static final double thresholdHigh = 0.7;
+    public static final int sMAX = 20;
 
     public static final double MU1 = 0.8;
     public static final double MU2 = 0.4;
@@ -27,7 +27,6 @@ public class VFHPlus {
     private double angleIncrement;
     private double angularResolution;
     private Integer previousTargetSector;
-    private int delay = 0;
 
     public VFHPlus (double startAngle, double endAngle, double angleIncrement) {
         this.startAngle = startAngle;
@@ -48,10 +47,7 @@ public class VFHPlus {
             return goalAngle;
         }
 
-        Double bestDirection = findBestDirection(binaryHistogram, goalAngle);
-
-        System.out.println("ANGLE TO CARROT = " + goalAngle + " BEST DIRECTION = " + bestDirection);
-        return bestDirection;
+        return findBestDirection(binaryHistogram, goalAngle);
     }
 
     private Double findBestDirection(Map<Integer, Integer> binaryHistogram, double goalAngle) {
@@ -62,12 +58,10 @@ public class VFHPlus {
             goalAngle = endAngle;
         }
         goalSector = (int)((goalAngle) / angularResolution);
-        //System.out.println(goalAngle + " EQUALS SECTOR " + goalSector);
 
         ArrayList<CandidateValley> candidateValleys = getCandidateValleys(binaryHistogram);
         ArrayList<Integer> candidateDirections = getCandidateDirections(candidateValleys, goalSector);
         if(candidateDirections.size() > candidateValleys.size()) {
-            //System.out.println("MORE CANDIDATE DIRECTIONS THAN VALLEYS.");
 
         }
 
@@ -75,23 +69,14 @@ public class VFHPlus {
         Integer bestDirection = null;
         for (int i = 0; i < candidateDirections.size(); i++) {
             double candidateCost = calculateCost(candidateDirections.get(i), goalSector, MU1, MU2, MU3);
-            //System.out.println("CANDIDATE "+ i + " COSTS " + candidateCost + " DIRECTION " + candidateDirections.get(i));
             if(candidateCost < bestCost) {
                 bestCost = candidateCost;
                 bestDirection = candidateDirections.get(i);
             }
         }
-        /*if (delay++ > 5) {
-            System.out.println("best sector: " + (bestDirection == null ? "NULL" : bestDirection));
-            delay = 0;
-        }*/
         previousTargetSector = bestDirection;
-        //System.out.println("BEST SECTOR = " + -bestDirection);
-        //System.exit(1);
 
-        //System.out.println("CHOOSING BEST DIRECTION " + bestDirection);
-
-        return bestDirection == null ? null : (-bestDirection) * angularResolution;
+        return bestDirection == null ? null : (bestDirection) * angularResolution;
     }
 
 
@@ -99,13 +84,10 @@ public class VFHPlus {
     private double calculateCost(int candidateSector, int goalSector, double mu1, double mu2, double mu3) {
 
         double first = mu1*(calcDeltaSectors(candidateSector, goalSector));
-        //System.out.println("DELTA GOAL SECTOR " + calcDeltaSectors(candidateSector, goalSector));
         double second = mu2 * calcDeltaSectors(candidateSector, 0);
         double third = (previousTargetSector == null ? 0 : mu3 * calcDeltaSectors(candidateSector, previousTargetSector));
 
-        double sum = (double)first + (double)second + (double)third;
-
-        return sum;
+        return first + second + third;
     }
 
     public static int calcDeltaSectors(int sectorTwo, int sectorOne) {
@@ -127,12 +109,9 @@ public class VFHPlus {
                 candidateDirections.add(rightBorderSector + sMAX/2);
                 if (leftBorderSector <= goalSector && rightBorderSector >= goalSector) {
                     candidateDirections.add(goalSector);
-                    //System.out.println("CARROT FOUND IN SECTOR " + goalSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
                 }
-                //System.out.println("FOUND WIDE VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
             } else {
                 candidateDirections.add((leftBorderSector + rightBorderSector) / 2);
-                //System.out.println("FOUND NARROW VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
             }
         }
 
@@ -146,12 +125,6 @@ public class VFHPlus {
         ArrayList<Integer> keys = new ArrayList<Integer>(sortedKeys);
         ArrayList<CandidateValley> candidateValleys = new ArrayList<CandidateValley>();
 
-        /*for (int i = 0; i< binaryHistogram.size(); i++) {
-            System.out.println("Key " + keys.get(i) + " VALUE " + binaryHistogram.get(keys.get(i)));
-        }*/
-        //System.exit(1);
-
-
         int index = 0;
         Integer startSector = null;
         while (index < keys.size()) {
@@ -162,7 +135,6 @@ public class VFHPlus {
             } else {
                 if(startSector != null) {
 
-                    //System.out.println("VALLEY ADDED BETWEEN" + keys.get(index - 1) + " AND " + startSector);
                     candidateValleys.add(new CandidateValley(keys.get(index - 1), startSector));
                     startSector = null;
                 }
@@ -170,15 +142,10 @@ public class VFHPlus {
             index++;
         }
         if (startSector != null) {
-            //System.out.println("VALLEY ADDED BETWEEN" + keys.get(keys.size() - 1) + " AND " + startSector);
 
             candidateValleys.add(new CandidateValley(keys.get(keys.size() - 1), startSector));
         }
         return candidateValleys;
-    }
-
-    private double getAngleForSector(int sectorNumber) {
-        return sectorNumber * angularResolution + startAngle;
     }
 
     public Map<Integer, Integer> buildBinaryHistogram(Map<Integer, Double> histogram) {
@@ -202,7 +169,6 @@ public class VFHPlus {
             }
         }
         if (noObstacles) {
-            //System.out.println("No obstacles");
             return null;
         }
         return binaryHistogram;
@@ -220,7 +186,6 @@ public class VFHPlus {
         if(NO_OF_SECTORS % 2 == 0) {
            maxSector = maxSector - 1;
         }
-        //System.out.println("MAXSECTOR " + maxSector);
         for(int i = -NO_OF_SECTORS/2; i <= maxSector; i++) {
             sector_magnitudes.put(i, 0.0);
         }
@@ -254,14 +219,6 @@ public class VFHPlus {
 
         public CandidateValley(int leftBorderSector, int rightBorderSector) {
             this.leftBorderSector = leftBorderSector;
-            this.rightBorderSector = rightBorderSector;
-        }
-
-        public void setLeftBorderSector(int leftBorderSector) {
-            this.leftBorderSector = leftBorderSector;
-        }
-
-        public void setRightBorderSector(int rightBorderSector) {
             this.rightBorderSector = rightBorderSector;
         }
 

@@ -20,6 +20,7 @@ public class DrawPath extends Frame {
         ga.setPaint(color);
         ga.fill(circle);
     }
+    /*
     public void drawCar(Graphics g)
     {
         Graphics2D ga = (Graphics2D)g;
@@ -28,7 +29,7 @@ public class DrawPath extends Frame {
         ga.draw(circle);
         ga.setPaint(color);
         ga.fill(circle);
-    }
+    }*/
 
     public void paint(Graphics g) {
         Graphics2D ga = (Graphics2D)g;
