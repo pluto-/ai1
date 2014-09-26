@@ -13,7 +13,7 @@ import java.nio.file.Files;
  */
 public class RobotController implements Runnable {
 
-    private final static double LOOK_AHEAD = 1;
+    private static double LOOK_AHEAD = 1;
     private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
@@ -147,58 +147,11 @@ public class RobotController implements Runnable {
         }
         vfhPlus.resetPreviousTargetSector();
         return purePursuit(heading, currentPosition, carrotPosition, distanceToCarrotPoint);
-
-
-
-        //double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
-        //Double vfhAngle = vfhPlus.calculateSteeringDirection(distanceToCarrotPoint,laserEchoesResponse.getEchoes(), ftcAngle);
-        //double purePursuit = purePursuit(heading, currentPosition, carrotPosition, distanceToCarrotPoint);
-        //System.out.println("VFS STEERING DIRECTION = " + vfhAngle);
-        //System.out.println("FOLLOW CARROT DIRECTION = " + ftcAngle);
-
-        //return followTheCarrot(heading, directionToCarrotPoint);
-
-
-        //Map<Integer, Double> stuff = vfhPlus.buildPolarHistogram(1.0, laserEchoesResponse.getEchoes(), laserPropertiesResponse.getStartAngle(), 0);
-
-        /*if(delay++ > 500) {
-            logger.error("VFH+ angle: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit angle: " + alpha);
-            logger.error("VFH+ curvature: " + (vfhAngle == null ? "NULL " : vfhAngle) + " PurePursuit curvature: " + (2 * distanceToCarrotPoint * Math.cos(alpha) / (distanceToCarrotPoint * distanceToCarrotPoint)));
-            delay = 0;
-        }
-        if (vfhAngle != null && vfhAngle != alpha) {
-            double curvature = vfhAngle*0.8;
-
-            return curvature;
-
-        } else {
-            double deltaX = distanceToCarrotPoint * Math.cos(alpha);
-            double curvature = (2*deltaX / (distanceToCarrotPoint*distanceToCarrotPoint));
-            return curvature;
-            // 5. Calculate the curvature of the circular arc.
-            // System.out.println("VEHICLE POS X: " + currentPosition.getX() + " Y: " + currentPosition.getY() + " curvature: " + curvature);
-
-            // 6. Determine the steering angle.
-        }*/
-
-
-        /*
-        if(delay++ > 500) {
-            logger.error("Carrot Point: " + carrotPosition + " alpha: " + alpha + " heading: " + heading);
-            logger.error("alpha - heading: " + (alpha - heading) + " alpha + heading: " + (alpha + heading));
-            delay = 0;
-        }*/
-        //return curvature;
     }
+
+
     private double purePursuit(double heading, Position currentPosition, Position carrotPosition, double distanceToCarrotPoint) {
-        //double alpha = heading + Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY());
-        //double alpha = heading + Math.atan2(carrotPosition.getY() - currentPosition.getY(), carrotPosition.getX() - currentPosition.getX());
         double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
-
-        //System.out.println("HEADING = " + heading);
-        //System.out.println("ORIENTATION = " + currentPosition.getBearingTo(carrotPosition));
-        //System.out.println("DIFFERENCE = " + (heading - Math.atan2(carrotPosition.getX() - currentPosition.getX(), carrotPosition.getY() - currentPosition.getY())));
-
         double deltaX = distanceToCarrotPoint * Math.cos(alpha);
         double curvature = ((-2)*deltaX / (distanceToCarrotPoint*distanceToCarrotPoint));
         return curvature;
@@ -318,5 +271,10 @@ public class RobotController implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void setLookahead(Double lookahead) {
+        LOOK_AHEAD = lookahead;
+        logger.error("Lookahead: " + LOOK_AHEAD);
     }
 }

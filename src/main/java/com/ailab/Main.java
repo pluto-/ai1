@@ -30,6 +30,9 @@ public class Main {
 
         try {
             controller = new RobotController(robot, args[0]);
+            if (args.length > 1) {
+                controller.setLookahead(Double.parseDouble(args[1]));
+            }
             controller.start();
         } catch (IOException e) {
             e.printStackTrace();

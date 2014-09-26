@@ -14,8 +14,8 @@ public class VFHPlus {
     public static final int NO_OF_SECTORS = 90;
     public static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
     public static final int NO_OF_BLIND_SECTORS = (int)(NO_OF_SECTORS / 3);
-    public static final double thresholdLow = 0.4;
-    public static final double thresholdHigh = 0.6;
+    public static final double thresholdLow = 0.2;
+    public static final double thresholdHigh = 0.5;
     public static final int sMAX = 5;
 
     public static final double MU1 = 0.8;
@@ -46,12 +46,8 @@ public class VFHPlus {
         if (binaryHistogram == null) {
             return goalAngle;
         }
-        double bestAngle = findBestDirection(binaryHistogram, goalAngle);
-        if (Math.abs(bestAngle - goalAngle) / goalAngle < 0.01) {
-            return goalAngle;
-        } else {
-            return bestAngle;
-        }
+
+        return findBestDirection(binaryHistogram, goalAngle);
     }
 
     private Double findBestDirection(Map<Integer, Integer> binaryHistogram, double goalAngle) {
