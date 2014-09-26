@@ -1,9 +1,12 @@
 package com.ailab.tools;
 
+import com.ailab.controllers.VFHPlus;
+
 import java.lang.*;
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class DrawPath extends Frame {
 
@@ -15,15 +18,6 @@ public class DrawPath extends Frame {
     {
         Graphics2D ga = (Graphics2D)g;
         Shape circle = new Ellipse2D.Float(x, y, size, size);
-        ga.setPaint(color);
-        ga.draw(circle);
-        ga.setPaint(color);
-        ga.fill(circle);
-    }
-    public void drawCar(Graphics g)
-    {
-        Graphics2D ga = (Graphics2D)g;
-        Shape circle = new Square();
         ga.setPaint(color);
         ga.draw(circle);
         ga.setPaint(color);
@@ -42,7 +36,6 @@ public class DrawPath extends Frame {
             drawPixel(g, yellowPoints.get(i).x, yellowPoints.get(i).y, 3, Color.yellow);
         }
         drawPixel(g, greenPoint.x, greenPoint.y, 7, Color.green);
-
     }
 
     public void addRedPoint(double x, double y) {
