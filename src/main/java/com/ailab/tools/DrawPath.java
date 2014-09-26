@@ -20,6 +20,15 @@ public class DrawPath extends Frame {
         ga.setPaint(color);
         ga.fill(circle);
     }
+    public void drawCar(Graphics g)
+    {
+        Graphics2D ga = (Graphics2D)g;
+        Shape circle = new Square();
+        ga.setPaint(color);
+        ga.draw(circle);
+        ga.setPaint(color);
+        ga.fill(circle);
+    }
 
     public void paint(Graphics g) {
         Graphics2D ga = (Graphics2D)g;
@@ -33,6 +42,7 @@ public class DrawPath extends Frame {
             drawPixel(g, yellowPoints.get(i).x, yellowPoints.get(i).y, 3, Color.yellow);
         }
         drawPixel(g, greenPoint.x, greenPoint.y, 7, Color.green);
+
     }
 
     public void addRedPoint(double x, double y) {

@@ -51,7 +51,7 @@ public class RobotController implements Runnable {
                     LocalizationResponse localizationResponse = new LocalizationResponse();
                     robot.getResponse(localizationResponse);
                     double distance = new Position(localizationResponse.getPosition()).getDistanceTo(path.get(path.size() - 1).getPosition());
-                    if (distance < 0.05) {
+                    if (distance < 0.2) {
                         logger.error("distance to goal: " + distance);
                         robot.drive(0, 0);
                         break;
@@ -206,7 +206,7 @@ public class RobotController implements Runnable {
     }
 
     private double followTheCarrot(double heading, double directionToCarrotPoint) {
-        double e = - Math.PI/2 + heading - directionToCarrotPoint;
+        double e = - heading - Math.PI/2 + directionToCarrotPoint;
         double e_prime = e * PROPORTIONAL_GAIN;
         double e_0;
         if (e_prime > Math.PI)

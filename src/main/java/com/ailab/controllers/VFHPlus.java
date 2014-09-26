@@ -7,14 +7,13 @@ import java.util.*;
  */
 public class VFHPlus {
 
-    // HEJ PATRIK!!!!!!
-
     public static final double a = 1.0;
     public static final double ROBOT_RADIUS = 0.25;
     public static final double d_s = 0.05;
     public static final double ENLARGEMENT_RADIUS = ROBOT_RADIUS + d_s;
-    public static final int NO_OF_SECTORS = 45;
+    public static final int NO_OF_SECTORS = 90;
     public static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
+    public static final int NO_OF_BLIND_SECTORS = (int)(NO_OF_SECTORS / 3);
     public static final double thresholdLow = 0.4;
     public static final double thresholdHigh = 0.4;
     public static final int sMAX = 6;
@@ -35,6 +34,7 @@ public class VFHPlus {
         this.endAngle = endAngle;
         this.angleIncrement = angleIncrement;
         angularResolution = READS_PER_SECTOR * angleIncrement;
+
         previousTargetSector = null;
     }
 
@@ -48,7 +48,10 @@ public class VFHPlus {
             return goalAngle;
         }
 
-        return findBestDirection(binaryHistogram, goalAngle);
+        Double bestDirection = findBestDirection(binaryHistogram, goalAngle);
+
+        System.out.println("ANGLE TO CARROT = " + goalAngle + " BEST DIRECTION = " + bestDirection);
+        return bestDirection;
     }
 
     private Double findBestDirection(Map<Integer, Integer> binaryHistogram, double goalAngle) {
@@ -59,7 +62,7 @@ public class VFHPlus {
             goalAngle = endAngle;
         }
         goalSector = (int)((goalAngle) / angularResolution);
-        System.out.println(goalAngle + " EQUALS SECTOR " + goalSector);
+        //System.out.println(goalAngle + " EQUALS SECTOR " + goalSector);
 
         ArrayList<CandidateValley> candidateValleys = getCandidateValleys(binaryHistogram);
         ArrayList<Integer> candidateDirections = getCandidateDirections(candidateValleys, goalSector);
@@ -72,7 +75,7 @@ public class VFHPlus {
         Integer bestDirection = null;
         for (int i = 0; i < candidateDirections.size(); i++) {
             double candidateCost = calculateCost(candidateDirections.get(i), goalSector, MU1, MU2, MU3);
-            System.out.println("CANDIDATE "+ i + " COSTS " + candidateCost + " DIRECTION " + candidateDirections.get(i));
+            //System.out.println("CANDIDATE "+ i + " COSTS " + candidateCost + " DIRECTION " + candidateDirections.get(i));
             if(candidateCost < bestCost) {
                 bestCost = candidateCost;
                 bestDirection = candidateDirections.get(i);
@@ -86,7 +89,7 @@ public class VFHPlus {
         //System.out.println("BEST SECTOR = " + -bestDirection);
         //System.exit(1);
 
-        System.out.println("CHOOSING BEST DIRECTION " + bestDirection);
+        //System.out.println("CHOOSING BEST DIRECTION " + bestDirection);
 
         return bestDirection == null ? null : (-bestDirection) * angularResolution;
     }
@@ -96,7 +99,7 @@ public class VFHPlus {
     private double calculateCost(int candidateSector, int goalSector, double mu1, double mu2, double mu3) {
 
         double first = mu1*(calcDeltaSectors(candidateSector, goalSector));
-        System.out.println("DELTA GOAL SECTOR " + calcDeltaSectors(candidateSector, goalSector));
+        //System.out.println("DELTA GOAL SECTOR " + calcDeltaSectors(candidateSector, goalSector));
         double second = mu2 * calcDeltaSectors(candidateSector, 0);
         double third = (previousTargetSector == null ? 0 : mu3 * calcDeltaSectors(candidateSector, previousTargetSector));
 
@@ -105,10 +108,10 @@ public class VFHPlus {
         return sum;
     }
 
-    private int calcDeltaSectors(int sectorTwo, int sectorOne) {
+    public static int calcDeltaSectors(int sectorTwo, int sectorOne) {
         int first = Math.abs(sectorOne - sectorTwo);
-        int second = Math.abs(sectorOne - sectorTwo - NO_OF_SECTORS);
-        int third = Math.abs(sectorOne - sectorTwo + NO_OF_SECTORS);
+        int second = Math.abs(sectorOne - sectorTwo - (NO_OF_SECTORS + NO_OF_BLIND_SECTORS));
+        int third = Math.abs(sectorOne - sectorTwo + (NO_OF_SECTORS + NO_OF_BLIND_SECTORS));
         int min_first_second = Math.min(first, second);
         return Math.min(min_first_second, third);
     }
@@ -124,12 +127,12 @@ public class VFHPlus {
                 candidateDirections.add(rightBorderSector + sMAX/2);
                 if (leftBorderSector <= goalSector && rightBorderSector >= goalSector) {
                     candidateDirections.add(goalSector);
-                    System.out.println("CARROT FOUND IN SECTOR " + goalSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
+                    //System.out.println("CARROT FOUND IN SECTOR " + goalSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
                 }
-                System.out.println("FOUND WIDE VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
+                //System.out.println("FOUND WIDE VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
             } else {
                 candidateDirections.add((leftBorderSector + rightBorderSector) / 2);
-                System.out.println("FOUND NARROW VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
+                //System.out.println("FOUND NARROW VALLEY BETWEEN " + leftBorderSector + " AND " + rightBorderSector + " CANDIDATE LIST SIZE " + candidateDirections.size());
             }
         }
 
@@ -159,7 +162,7 @@ public class VFHPlus {
             } else {
                 if(startSector != null) {
 
-                    System.out.println("VALLEY ADDED BETWEEN" + keys.get(index - 1) + " AND " + startSector);
+                    //System.out.println("VALLEY ADDED BETWEEN" + keys.get(index - 1) + " AND " + startSector);
                     candidateValleys.add(new CandidateValley(keys.get(index - 1), startSector));
                     startSector = null;
                 }
@@ -167,7 +170,7 @@ public class VFHPlus {
             index++;
         }
         if (startSector != null) {
-            System.out.println("VALLEY ADDED BETWEEN" + keys.get(keys.size() - 1) + " AND " + startSector);
+            //System.out.println("VALLEY ADDED BETWEEN" + keys.get(keys.size() - 1) + " AND " + startSector);
 
             candidateValleys.add(new CandidateValley(keys.get(keys.size() - 1), startSector));
         }
