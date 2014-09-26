@@ -13,7 +13,7 @@ import java.nio.file.Files;
  */
 public class RobotController implements Runnable {
 
-    private final static double LOOK_AHEAD = 2;
+    private final static double LOOK_AHEAD = 1;
     private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
@@ -131,7 +131,7 @@ public class RobotController implements Runnable {
                 return 1;
             }
             if(ftcAngle != vfhAngle) {
-                logger.error("USING VFH+ ANGLE: " + vfhAngle);
+                logger.error("USING VFH+ ANGLE: " + vfhAngle + "         VFH - FTC: " + (vfhAngle - ftcAngle));
                 if(vfhAngle > 0) {
                     drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
 

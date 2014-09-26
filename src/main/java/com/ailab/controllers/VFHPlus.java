@@ -46,8 +46,12 @@ public class VFHPlus {
         if (binaryHistogram == null) {
             return goalAngle;
         }
-
-        return findBestDirection(binaryHistogram, goalAngle);
+        double bestAngle = findBestDirection(binaryHistogram, goalAngle);
+        if (Math.abs(bestAngle - goalAngle) / goalAngle < 0.01) {
+            return goalAngle;
+        } else {
+            return bestAngle;
+        }
     }
 
     private Double findBestDirection(Map<Integer, Integer> binaryHistogram, double goalAngle) {
@@ -101,20 +105,23 @@ public class VFHPlus {
     private ArrayList<Integer> getCandidateDirections(ArrayList<CandidateValley> candidateValleys, int goalSector) {
 
         ArrayList<Integer> candidateDirections = new ArrayList<Integer>();
+        boolean notReachable = true;
         for (CandidateValley candidateValley: candidateValleys) {
             int leftBorderSector = candidateValley.getLeftBorderSector();
             int rightBorderSector = candidateValley.getRightBorderSector();
             if (candidateValley.isWideValley(sMAX)) {
                 candidateDirections.add(leftBorderSector - sMAX/2);
                 candidateDirections.add(rightBorderSector + sMAX/2);
-                if (leftBorderSector <= goalSector && rightBorderSector >= goalSector) {
+                if (leftBorderSector >= goalSector && rightBorderSector <= goalSector) {
+                    notReachable = false;
                     candidateDirections.add(goalSector);
                 }
             } else {
                 candidateDirections.add((leftBorderSector + rightBorderSector) / 2);
             }
         }
-
+        if (notReachable)
+            System.out.println("Goal sector not reachable");
         return candidateDirections;
     }
 
