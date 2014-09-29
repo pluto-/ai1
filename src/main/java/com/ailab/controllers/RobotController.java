@@ -9,9 +9,13 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
 /**
+ * Contains all the methods for calculating the path tracking algorithms, determine the speed and angular speed and
+ * methods for determining carrot position and distance. ALso contains the constants LOOK_AHEAD and PROPORTIONAL_GAIN
+ * which are used by the algorithms.
+ *
  * Created by Jonas on 2014-09-15.
  */
-public class RobotController implements Runnable {
+public class RobotController {
 
     private static boolean running = true;
 
@@ -27,18 +31,29 @@ public class RobotController implements Runnable {
     DrawPath drawPath;
     VFHPlus vfhPlus;
 
+    /**
+     * Constructor which reads the path from the JSON file and the properties of the laser sensor.
+     * @param robot the robot.
+     * @param pathFile path to the JSON file containing the path of the robot.
+     * @throws IOException
+     */
     public RobotController(Robot robot, String pathFile) throws IOException {
         this.robot = robot;
 
         path = new Path(Files.newInputStream(FileSystems.getDefault().getPath(pathFile)));
-        //drawPath = new DrawPath(path);
         LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
         robot.getResponse(laserPropertiesResponse);
-        vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getEndAngle(), laserPropertiesResponse.getAngleIncrement());
-        //Thread thread = new Thread(this);
-        //thread.start();
+        vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getEndAngle(),
+                laserPropertiesResponse.getAngleIncrement());
     }
 
+    /**
+     * The method containing the loop which sends requests and responses for changing speed of the of the vehicle
+     * after calling the algorithms and determining new directions and speeds. When the robot has reached the goal,
+     * the loop is done and the time it took to reach the goal is given to the logger.
+     *
+     * @throws Exception
+     */
     public void start() throws Exception {
 
         double curvature;
@@ -61,7 +76,7 @@ public class RobotController implements Runnable {
                 }
                 LocalizationResponse localizationResponse = new LocalizationResponse();
                 robot.getResponse(localizationResponse);
-                curvature = pursue(path);
+                curvature = pursue();
                 speedAndAngularSpeed = setSpeedAndAngularSpeed(curvature);
 
                 robot.drive(speedAndAngularSpeed[0], speedAndAngularSpeed[1]);
@@ -73,6 +88,12 @@ public class RobotController implements Runnable {
         }
     }
 
+    /**
+     * Calculates the new speed and angular speed from the given curvature.
+     *
+     * @param curvature the curvature.
+     * @return speed = [0] and angular speed = [1].
+     */
     private double[] setSpeedAndAngularSpeed(double curvature) {
         // 0 <= speed <= 1.
         double speed;
@@ -94,21 +115,25 @@ public class RobotController implements Runnable {
         return new double[] {speed, angularSpeed};
     }
 
-    public double pursue(Path path) throws IOException {
+    /**
+     * The method which calls the different path tracking algorithms and obstacle avoidance algorithms when these
+     * are required. See report for description of algorithm calling.
+     *
+     * @return a curvature.
+     * @throws IOException
+     */
+    public double pursue() throws IOException {
         // 1. Determine vehicle position.
         LocalizationResponse localizationResponse = new LocalizationResponse();
         localizationResponse = (LocalizationResponse)robot.getResponse(localizationResponse);
         Position currentPosition = new Position(localizationResponse.getPosition());
         double heading = localizationResponse.getHeadingAngle();
         // 2. Find the point on the path closes to the vehicle, 3. Find the carrot point.
-        Position carrotPosition = calcCarrotPosition(LOOK_AHEAD, currentPosition);
-        //drawPath.setGreenPoint(carrotPosition.getX(), carrotPosition.getY());
+        Position carrotPosition = calcCarrotPosition(currentPosition);
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
         double distanceToCarrotPoint = currentPosition.getDistanceTo(carrotPosition);
         double directionToCarrotPoint = currentPosition.getBearingTo(carrotPosition);
-
-
 
         LaserEchoesResponse laserEchoesResponse  = new LaserEchoesResponse();
         robot.getResponse(laserEchoesResponse);
@@ -130,13 +155,6 @@ public class RobotController implements Runnable {
                 return 1;
             }
             if(ftcAngle != vfhAngle) {
-                if(vfhAngle > 0) {
-                  // drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
-
-                } else {
-
-                    //drawPath.addYellowPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
-                }
 
                 return vfhAngle;
             }
@@ -147,7 +165,15 @@ public class RobotController implements Runnable {
         return purePursuit(heading, currentPosition, carrotPosition, distanceToCarrotPoint);
     }
 
-
+    /**
+     * Calculates the curvature from "Pure Pursuit".
+     *
+     * @param heading the heading of the vehicle.
+     * @param currentPosition the position of the vehicle.
+     * @param carrotPosition the position of the carrot point.
+     * @param distanceToCarrotPoint the distance to the carrot point.
+     * @return the calculated curvature.
+     */
     private double purePursuit(double heading, Position currentPosition, Position carrotPosition, double distanceToCarrotPoint) {
         double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
         double deltaX = distanceToCarrotPoint * Math.cos(alpha);
@@ -155,6 +181,13 @@ public class RobotController implements Runnable {
         return curvature;
     }
 
+    /**
+     * Returns the error angle from the "Follow the Carrot" algorithm. Uses the constant PROPORTIONAL_GAIN.
+     *
+     * @param heading the heading of the vehicle.
+     * @param directionToCarrotPoint the direction to the carrot point.
+     * @return the error angle.
+     */
     private double followTheCarrot(double heading, double directionToCarrotPoint) {
         double e = - heading - Math.PI/2 + directionToCarrotPoint;
         double e_prime = e * PROPORTIONAL_GAIN;
@@ -169,12 +202,20 @@ public class RobotController implements Runnable {
         return e_0;
     }
 
-    private Position calcCarrotPosition(double lookAhead, Position vehicle_pos) {
+    /**
+     * Calculates the position of the carrot point by going to the closest point on the path and use the
+     * getCarrotPosition method to step forward LOOK_AHEAD distance, when that distance has been reached the
+     * carrot point is positioned there.
+     *
+     * @param vehicle_pos the position of the vehicle.
+     * @return the position of the carrot point.
+     */
+    private Position calcCarrotPosition(Position vehicle_pos) {
         double shortestDistance = Integer.MAX_VALUE;
         DistanceData distance;
         int shortestNodeNumber = -1;
         int type = -1;
-        for(int i = indexOfLastClosestNode; i < path.size() && path.get(indexOfLastClosestNode).getPosition().getDistanceTo(path.get(i).getPosition()) < 2*lookAhead; i++) {
+        for(int i = indexOfLastClosestNode; i < path.size() && path.get(indexOfLastClosestNode).getPosition().getDistanceTo(path.get(i).getPosition()) < 2*LOOK_AHEAD; i++) {
             distance = calcDistance(path.get(i).getPosition(), path.get(i + 1).getPosition(), vehicle_pos);
             if(shortestDistance > distance.getDistance()) {
                 shortestDistance = distance.getDistance();
@@ -190,21 +231,29 @@ public class RobotController implements Runnable {
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
             Position p1 = path.get(shortestNodeNumber + 1).getPose().getPosition();
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
-            lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
+            LOOK_AHEAD += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
         }
-        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
+        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, LOOK_AHEAD);
     }
 
+    /**
+     * Recursive method which steps forward in the path until it has used the LOOK_AHEAD distance.
+     * @param current the current PathNode.
+     * @param next the next PathNode.
+     * @param path the path.
+     * @param lookAhead the look ahead distance left to step forward.
+     * @return the position of the carrot point.
+     */
     public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
         indexOfLastTargetNode = current.getIndex();
-        if(lookAhead == 0  || path.isLastNode(current)) {
+        if(LOOK_AHEAD == 0  || path.isLastNode(current)) {
             return current.getPosition();
-        } else if(lookAhead >= current.getPosition().getDistanceTo(next.getPosition())) {
+        } else if(LOOK_AHEAD >= current.getPosition().getDistanceTo(next.getPosition())) {
             double new_lookAhead = lookAhead - current.getPosition().getDistanceTo(next.getPosition());
             return getCarrotPosition(next, path.get(next.getIndex() + 1), path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();
-            double k = lookAhead / current.getPosition().getDistanceTo(next.getPosition());
+            double k = LOOK_AHEAD / current.getPosition().getDistanceTo(next.getPosition());
             double x = current.getPosition().getX() + (next.getPosition().getX() - current.getPosition().getX()) * k;
             double y = current.getPosition().getY() + (next.getPosition().getY() - current.getPosition().getY()) * k;
 
@@ -215,8 +264,16 @@ public class RobotController implements Runnable {
         }
     }
 
-    // From algorithm in https://www8.cs.umu.se/kurser/5DV121/HT14/utdelat/Ringdahl%202003%20Master%20thesis.pdf
-    // page 12 - 14.
+    /**
+     * This method is used to determine if a point p is closes to one of two other points or the segment between the
+     * points. It also calculates the distance to the closest point.
+     *
+     * @param p0 The first point.
+     * @param p1 The second point.
+     * @param p The point which distance to the other points is to be determined.
+     * @return A data type containing the distance to the closest point and whether p is closest to p0, p1 or the
+     * segment between p0 and p1.
+     */
     private static DistanceData calcDistance(Position p0, Position p1, Position p) {
         double v[] = new double[2];
         v[0] = p1.getX() - p0.getX();
@@ -248,6 +305,12 @@ public class RobotController implements Runnable {
         return new DistanceData(p.getDistanceTo(new Position(pb)), DistanceData.SEGMENT);
     }
 
+    /**
+     * Calculates the dot product between two points.
+     * @param a the first point.
+     * @param b the second point.
+     * @return the dot product.
+     */
     private static double dotProduct(double[] a, double[] b){
         if(a.length != b.length){
             throw new IllegalArgumentException("The dimensions have to be equal!");
@@ -259,20 +322,13 @@ public class RobotController implements Runnable {
         return sum;
     }
 
-    public void setLookahead(Double lookahead) {
-        LOOK_AHEAD = lookahead;
-        logger.error("Lookahead: " + LOOK_AHEAD);
+    /**
+     * Sets a new look ahead.
+     * @param lookAhead the new look ahead.
+     */
+    public void setLookAhead(Double lookAhead) {
+        LOOK_AHEAD = lookAhead;
+        logger.error("LOOK_AHEAD: " + LOOK_AHEAD);
     }
 
-    
-    public void run() {
-        while (running) {
-            drawPath.repaint();
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }
