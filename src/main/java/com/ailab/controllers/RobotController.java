@@ -19,7 +19,7 @@ public class RobotController {
 
     private static boolean running = true;
 
-    private static double LOOK_AHEAD = 2;
+    private static double LOOK_AHEAD = 1;
     private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
@@ -66,7 +66,7 @@ public class RobotController {
                     robot.getResponse(localizationResponse);
                     double distance = new Position(localizationResponse.getPosition()).getDistanceTo(path.get(path.size() - 1).getPosition());
                     if (distance < 0.2) {
-                        logger.error("Goal reached - margin of error: " + distance + " time : " + (System.currentTimeMillis() - start) / 1000 + " s");
+                        logger.error("Goal reached - margin of error: " + distance + " time : " + (System.currentTimeMillis() - start) / 1000.0 + " s");
                         robot.drive(0, 0);
                         running = false;
                         break;
@@ -97,13 +97,7 @@ public class RobotController {
         double speed;
         double angularSpeed;
 
-        if (Math.abs(curvature) > 3) {
-            speed = 0.1;
-            if(curvature < 0)
-                angularSpeed = -1;
-            else
-                angularSpeed = 1;
-        } else if (Math.abs(curvature) > 1) {
+        if (Math.abs(curvature) > 1) {
             speed = Math.abs(1 - Math.abs(curvature) / 2);
             angularSpeed = curvature;
         } else {
