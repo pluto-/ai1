@@ -99,7 +99,7 @@ public class RobotController {
         double speed;
         double angularSpeed;
 
-        if(Math.abs(curvature) > 2) {
+        if (Math.abs(curvature) > 3) {
             speed = 0.1;
             if(curvature < 0)
                 angularSpeed = -1;
@@ -225,15 +225,16 @@ public class RobotController {
         }
 
         int indexOfStartNode = shortestNodeNumber;
+        double lookAhead = LOOK_AHEAD;
         if(type == DistanceData.P1) {
             indexOfStartNode++;
         } else if(type == DistanceData.SEGMENT) {
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
             Position p1 = path.get(shortestNodeNumber + 1).getPose().getPosition();
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
-            LOOK_AHEAD += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
+            lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
         }
-        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, LOOK_AHEAD);
+        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
     }
 
     /**
@@ -246,14 +247,14 @@ public class RobotController {
      */
     public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
         indexOfLastTargetNode = current.getIndex();
-        if(LOOK_AHEAD == 0  || path.isLastNode(current)) {
+        if (lookAhead == 0 || path.isLastNode(current)) {
             return current.getPosition();
-        } else if(LOOK_AHEAD >= current.getPosition().getDistanceTo(next.getPosition())) {
+        } else if (lookAhead >= current.getPosition().getDistanceTo(next.getPosition())) {
             double new_lookAhead = lookAhead - current.getPosition().getDistanceTo(next.getPosition());
             return getCarrotPosition(next, path.get(next.getIndex() + 1), path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();
-            double k = LOOK_AHEAD / current.getPosition().getDistanceTo(next.getPosition());
+            double k = lookAhead / current.getPosition().getDistanceTo(next.getPosition());
             double x = current.getPosition().getX() + (next.getPosition().getX() - current.getPosition().getX()) * k;
             double y = current.getPosition().getY() + (next.getPosition().getY() - current.getPosition().getY()) * k;
 
