@@ -15,7 +15,7 @@ public class RobotController implements Runnable {
 
     private static boolean running = true;
 
-    private static double LOOK_AHEAD = 1;
+    private static double LOOK_AHEAD = 2;
     private final static double PROPORTIONAL_GAIN = 1;
 
     private Robot robot;
@@ -31,19 +31,18 @@ public class RobotController implements Runnable {
         this.robot = robot;
 
         path = new Path(Files.newInputStream(FileSystems.getDefault().getPath(pathFile)));
-        drawPath = new DrawPath(path);
+        //drawPath = new DrawPath(path);
         LaserPropertiesResponse laserPropertiesResponse = new LaserPropertiesResponse();
         robot.getResponse(laserPropertiesResponse);
         vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getEndAngle(), laserPropertiesResponse.getAngleIncrement());
-        Thread thread = new Thread(this);
-        thread.start();
+        //Thread thread = new Thread(this);
+        //thread.start();
     }
 
     public void start() throws Exception {
 
         double curvature;
         double speedAndAngularSpeed[];
-
 
         try {
             while (running) {
@@ -84,8 +83,11 @@ public class RobotController implements Runnable {
                 angularSpeed = -1;
             else
                 angularSpeed = 1;
-        } else {
+        } else if (Math.abs(curvature) > 1) {
             speed = Math.abs(1 - Math.abs(curvature) / 2);
+            angularSpeed = curvature;
+        } else {
+            speed = 1;
             angularSpeed = curvature;
         }
         return new double[] {speed, angularSpeed};
@@ -99,7 +101,7 @@ public class RobotController implements Runnable {
         double heading = localizationResponse.getHeadingAngle();
         // 2. Find the point on the path closes to the vehicle, 3. Find the carrot point.
         Position carrotPosition = calcCarrotPosition(LOOK_AHEAD, currentPosition);
-        drawPath.setGreenPoint(carrotPosition.getX(), carrotPosition.getY());
+        //drawPath.setGreenPoint(carrotPosition.getX(), carrotPosition.getY());
 
         // 4. Transform the carrot point and the vehicle location to the vehicle coordinates.
         double distanceToCarrotPoint = currentPosition.getDistanceTo(carrotPosition);
@@ -128,11 +130,11 @@ public class RobotController implements Runnable {
             }
             if(ftcAngle != vfhAngle) {
                 if(vfhAngle > 0) {
-                    drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
+                  // drawPath.addRedPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
 
                 } else {
 
-                    drawPath.addYellowPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
+                    //drawPath.addYellowPoint(localizationResponse.getPosition()[0], localizationResponse.getPosition()[1]);
                 }
 
                 return vfhAngle;
@@ -261,7 +263,7 @@ public class RobotController implements Runnable {
         logger.error("Lookahead: " + LOOK_AHEAD);
     }
 
-    @Override
+    
     public void run() {
         while (running) {
             drawPath.repaint();
