@@ -44,6 +44,7 @@ public class RobotController implements Runnable {
         double curvature;
         double speedAndAngularSpeed[];
 
+        long start = System.currentTimeMillis();
         try {
             while (running) {
                 if (indexOfLastTargetNode == path.size() - 1) {
@@ -52,7 +53,7 @@ public class RobotController implements Runnable {
                     robot.getResponse(localizationResponse);
                     double distance = new Position(localizationResponse.getPosition()).getDistanceTo(path.get(path.size() - 1).getPosition());
                     if (distance < 0.2) {
-                        logger.error("Goal reached - margin of error: " + distance);
+                        logger.error("Goal reached - margin of error: " + distance + " time : " + (System.currentTimeMillis() - start) / 1000 + " s");
                         robot.drive(0, 0);
                         running = false;
                         break;
