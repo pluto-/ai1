@@ -26,10 +26,8 @@ public class RobotController {
     private Path path;
     private int indexOfLastClosestNode = 0;
     private int indexOfLastTargetNode = 0;
-    static final Logger logger = LogManager.getLogger(RobotController.class.getName());
-    int delay = 0;
-    DrawPath drawPath;
-    VFHPlus vfhPlus;
+    private static final Logger logger = LogManager.getLogger(RobotController.class.getName());
+    private VFHPlus vfhPlus;
 
     /**
      * Constructor which reads the path from the JSON file and the properties of the laser sensor.
@@ -99,7 +97,7 @@ public class RobotController {
         double speed;
         double angularSpeed;
 
-        if(Math.abs(curvature) > 2) {
+        if (Math.abs(curvature) > 3) {
             speed = 0.1;
             if(curvature < 0)
                 angularSpeed = -1;
@@ -122,7 +120,7 @@ public class RobotController {
      * @return a curvature.
      * @throws IOException
      */
-    public double pursue() throws IOException {
+    private double pursue() throws IOException {
         // 1. Determine vehicle position.
         LocalizationResponse localizationResponse = new LocalizationResponse();
         localizationResponse = (LocalizationResponse)robot.getResponse(localizationResponse);
@@ -140,8 +138,8 @@ public class RobotController {
         double echoes[] = laserEchoesResponse.getEchoes();
 
         boolean obstacleNearby = false;
-        for(int i = 0; i < echoes.length; i++) {
-            if(echoes[i] <= distanceToCarrotPoint) {
+        for (double echo : echoes) {
+            if (echo <= distanceToCarrotPoint) {
                 obstacleNearby = true;
                 break;
             }
@@ -177,8 +175,7 @@ public class RobotController {
     private double purePursuit(double heading, Position currentPosition, Position carrotPosition, double distanceToCarrotPoint) {
         double alpha = - heading + currentPosition.getBearingTo(carrotPosition);
         double deltaX = distanceToCarrotPoint * Math.cos(alpha);
-        double curvature = ((-2)*deltaX / (distanceToCarrotPoint*distanceToCarrotPoint));
-        return curvature;
+        return ((-2) * deltaX / (distanceToCarrotPoint * distanceToCarrotPoint));
     }
 
     /**
@@ -225,15 +222,16 @@ public class RobotController {
         }
 
         int indexOfStartNode = shortestNodeNumber;
+        double lookAhead = LOOK_AHEAD;
         if(type == DistanceData.P1) {
             indexOfStartNode++;
         } else if(type == DistanceData.SEGMENT) {
             Position p0 = path.get(shortestNodeNumber).getPose().getPosition();
             Position p1 = path.get(shortestNodeNumber + 1).getPose().getPosition();
             Position position = Util.getClosestPointOnSegment(p0, p1, vehicle_pos);
-            LOOK_AHEAD += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
+            lookAhead += path.get(shortestNodeNumber).getPosition().getDistanceTo(position);
         }
-        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, LOOK_AHEAD);
+        return getCarrotPosition(path.get(indexOfStartNode), path.get(indexOfStartNode + 1), path, lookAhead);
     }
 
     /**
@@ -244,16 +242,16 @@ public class RobotController {
      * @param lookAhead the look ahead distance left to step forward.
      * @return the position of the carrot point.
      */
-    public Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
+    private Position getCarrotPosition(PathNode current, PathNode next, Path path, double lookAhead) {
         indexOfLastTargetNode = current.getIndex();
-        if(LOOK_AHEAD == 0  || path.isLastNode(current)) {
+        if (lookAhead == 0 || path.isLastNode(current)) {
             return current.getPosition();
-        } else if(LOOK_AHEAD >= current.getPosition().getDistanceTo(next.getPosition())) {
+        } else if (lookAhead >= current.getPosition().getDistanceTo(next.getPosition())) {
             double new_lookAhead = lookAhead - current.getPosition().getDistanceTo(next.getPosition());
             return getCarrotPosition(next, path.get(next.getIndex() + 1), path, new_lookAhead);
         } else {
             Position carrotPosition = new Position();
-            double k = LOOK_AHEAD / current.getPosition().getDistanceTo(next.getPosition());
+            double k = lookAhead / current.getPosition().getDistanceTo(next.getPosition());
             double x = current.getPosition().getX() + (next.getPosition().getX() - current.getPosition().getX()) * k;
             double y = current.getPosition().getY() + (next.getPosition().getY() - current.getPosition().getY()) * k;
 
