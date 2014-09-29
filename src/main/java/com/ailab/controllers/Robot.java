@@ -16,6 +16,9 @@ import java.net.URLConnection;
 import java.util.Map;
 
 /**
+ * An object of this class contains information about the connection to the robot in MRDS, it sends and receives
+ * JSON objects to/from the MRDS server and drives the robot at specified speed and angular speed.
+ *
  * Created by Jonas on 2014-09-15.
  */
 public class Robot {
@@ -30,6 +33,12 @@ public class Robot {
         mapper = new ObjectMapper();
     }
 
+    /**
+     * Send a differential drive request to MRDS which sets the speed of the vehicle.
+     * @param linearSpeed New linear speed of the vehicle.
+     * @param angularSpeed New Angular speed of the vehicle.
+     * @throws Exception
+     */
     public void drive(double linearSpeed, double angularSpeed) throws Exception {
         DifferentialDriveRequest dr = new DifferentialDriveRequest();
         dr.setAngularSpeed(angularSpeed);
@@ -37,6 +46,12 @@ public class Robot {
         int rc = putRequest(dr);
     }
 
+    /**
+     * Sends a request to the MRDS server.
+     * @param r the request to be sent.
+     * @return the response code.
+     * @throws Exception
+     */
     public int putRequest(Request r) throws Exception {
         URL url = new URL(host + ":" + port + r.getPath());
 
@@ -89,6 +104,11 @@ public class Robot {
         return r;
     }
 
+    /**
+     * Returns the bearing angle of the vehicle.
+     * @param lr the localization response containing the orientation.
+     * @return bearing angle.
+     */
     double getBearingAngle(LocalizationResponse lr) {
         double e[] = lr.getOrientation();
 
