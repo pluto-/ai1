@@ -17,9 +17,9 @@ public class PathNode {
     @JsonProperty("Pose")
     private Pose pose;
 
-    private int index;
+    private final int index;
     private static int globalIndex = 0;
-    static final Logger logger = LogManager.getLogger(PathNode.class.getName());
+    private static final Logger logger = LogManager.getLogger(PathNode.class.getName());
 
     public PathNode() {
         index = globalIndex++;

@@ -23,9 +23,9 @@ import java.util.Map;
  */
 public class Robot {
 
-    String host;
-    int port;
-    ObjectMapper mapper;
+    private final String host;
+    private final int port;
+    private final ObjectMapper mapper;
 
     public Robot(String host, int port) {
         this.host = host;
@@ -74,9 +74,7 @@ public class Robot {
         out.close();
 
         // wait for response code
-        int rc = connection.getResponseCode();
-
-        return rc;
+        return connection.getResponseCode();
     }
 
     /**

@@ -3,7 +3,7 @@ package com.ailab.tools;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Created by Patrik on 2014-09-15.
+ * Helper class to parse JSON responses from the robot properly
  */
 public class Orientation {
 

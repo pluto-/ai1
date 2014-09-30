@@ -9,7 +9,8 @@ public class DistanceData {
     public static final int P1 = 2;
     public static final int SEGMENT = 3;
 
-    private double distance;
+    private final double distance;
+    private final int type;
 
     public double getDistance() {
         return distance;
@@ -18,8 +19,6 @@ public class DistanceData {
     public int getType() {
         return type;
     }
-
-    private int type;
 
     public DistanceData(double distance, int type) {
         this.distance = distance;

@@ -21,7 +21,7 @@ public class RobotController {
 
     private static final double DEFAULT_LOOK_AHEAD = 1.0;
     private final double LOOK_AHEAD;
-    private final static double PROPORTIONAL_GAIN = 1;
+    private static final double PROPORTIONAL_GAIN = 1;
 
     private final Robot robot;
     private Path path;

@@ -12,25 +12,25 @@ import java.util.*;
  */
 public class VFHPlus {
 
-    public static final double A = 1.0;
-    public static final double ROBOT_RADIUS = 0.25;
-    public static final double D_S = 0.05;
-    public static final double ENLARGEMENT_RADIUS = ROBOT_RADIUS + D_S;
-    public static final int NO_OF_SECTORS = 90;
-    public static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
-    public static final int NO_OF_BLIND_SECTORS = (int)(NO_OF_SECTORS / 3);
-    public static final double THRESHOLD_LOW = 0.2;
-    public static final double THRESHOLD_HIGH = 0.5;
-    public static final int S_MAX = 5;
+    private static final double A = 1.0;
+    private static final double ROBOT_RADIUS = 0.25;
+    private static final double D_S = 0.05;
+    private static final double ENLARGEMENT_RADIUS = ROBOT_RADIUS + D_S;
+    private static final int NO_OF_SECTORS = 90;
+    private static final int READS_PER_SECTOR = 270 / NO_OF_SECTORS;
+    private static final int NO_OF_BLIND_SECTORS = (int)(NO_OF_SECTORS / 3);
+    private static final double THRESHOLD_LOW = 0.2;
+    private static final double THRESHOLD_HIGH = 0.5;
+    private static final int S_MAX = 5;
 
-    public static final double MU1 = 0.8;
-    public static final double MU2 = 0.4;
-    public static final double MU3 = 0.2;
+    private static final double MU1 = 0.8;
+    private static final double MU2 = 0.4;
+    private static final double MU3 = 0.2;
 
-    private double startAngle;
-    private double endAngle;
-    private double angleIncrement;
-    private double angularResolution;
+    private final double startAngle;
+    private final double endAngle;
+    private final double angleIncrement;
+    private final double angularResolution;
     private Integer previousTargetSector;
 
     /**
@@ -92,11 +92,11 @@ public class VFHPlus {
 
         double bestCost = Double.MAX_VALUE;
         Integer bestDirection = null;
-        for (int i = 0; i < candidateDirections.size(); i++) {
-            double candidateCost = calculateCost(candidateDirections.get(i), goalSector, MU1, MU2, MU3);
-            if(candidateCost < bestCost) {
+        for (Integer candidateDirection : candidateDirections) {
+            double candidateCost = calculateCost(candidateDirection, goalSector);
+            if (candidateCost < bestCost) {
                 bestCost = candidateCost;
-                bestDirection = candidateDirections.get(i);
+                bestDirection = candidateDirection;
             }
         }
         previousTargetSector = bestDirection;
@@ -109,17 +109,14 @@ public class VFHPlus {
      * Calculates the cost of the given sector.
      *
      * @param candidateSector the sector which will have it's cost return.
-     * @param goalSector the sector number which cintains the goal.
-     * @param mu1 First constant.
-     * @param mu2 Second Constant.
-     * @param mu3 Third Constant.
+     * @param goalSector the sector number which contains the goal.
      * @return the cost of the sector.
      */
-    private double calculateCost(int candidateSector, int goalSector, double mu1, double mu2, double mu3) {
+    private double calculateCost(int candidateSector, int goalSector) {
 
-        double first = mu1*(calcDeltaSectors(candidateSector, goalSector));
-        double second = mu2 * calcDeltaSectors(candidateSector, 0);
-        double third = (previousTargetSector == null ? 0 : mu3 * calcDeltaSectors(candidateSector, previousTargetSector));
+        double first = MU1 *(calcDeltaSectors(candidateSector, goalSector));
+        double second = MU2 * calcDeltaSectors(candidateSector, 0);
+        double third = (previousTargetSector == null ? 0 : MU3 * calcDeltaSectors(candidateSector, previousTargetSector));
 
         return first + second + third;
     }
@@ -155,7 +152,7 @@ public class VFHPlus {
         for (CandidateValley candidateValley: candidateValleys) {
             int leftBorderSector = candidateValley.getLeftBorderSector();
             int rightBorderSector = candidateValley.getRightBorderSector();
-            if (candidateValley.isWideValley(S_MAX)) {
+            if (candidateValley.isWideValley()) {
                 candidateDirections.add(leftBorderSector - S_MAX /2);
                 candidateDirections.add(rightBorderSector + S_MAX /2);
                 if (leftBorderSector >= goalSector && rightBorderSector <= goalSector) {
@@ -250,9 +247,8 @@ public class VFHPlus {
      */
     private  Map<Integer, Double> buildPolarHistogram(double distanceToCarrotPoint, double distances[]) {
 
-        double d_max = distanceToCarrotPoint;
         Map<Integer, Double> sector_magnitudes = new HashMap<Integer, Double>();
-        double b = A / d_max;
+        double b = A / distanceToCarrotPoint;
         double enlargement_angle;
         double direction_to_obstacle;
 
@@ -265,7 +261,7 @@ public class VFHPlus {
         }
 
         for(int i = 0; i < distances.length; i++) {
-            if(distances[i] <= d_max) {
+            if(distances[i] <= distanceToCarrotPoint) {
                 double magnitude = A - (b*distances[i]);
 
                 enlargement_angle = Math.asin(ENLARGEMENT_RADIUS / distances[i]);
@@ -288,8 +284,8 @@ public class VFHPlus {
 
     private class CandidateValley {
 
-        private int leftBorderSector;
-        private int rightBorderSector;
+        private final int leftBorderSector;
+        private final int rightBorderSector;
 
         public CandidateValley(int leftBorderSector, int rightBorderSector) {
             this.leftBorderSector = leftBorderSector;
@@ -304,8 +300,8 @@ public class VFHPlus {
             return leftBorderSector;
         }
 
-        public boolean isWideValley(int sMAX) {
-            return (leftBorderSector - rightBorderSector) > sMAX;
+        public boolean isWideValley() {
+            return (leftBorderSector - rightBorderSector) > S_MAX;
         }
     }
 }
