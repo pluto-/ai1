@@ -19,10 +19,11 @@ public class RobotController {
 
     private static boolean running = true;
 
-    private static double LOOK_AHEAD = 1;
+    private static final double DEFAULT_LOOK_AHEAD = 1.0;
+    private final double LOOK_AHEAD;
     private final static double PROPORTIONAL_GAIN = 1;
 
-    private Robot robot;
+    private final Robot robot;
     private Path path;
     private int indexOfLastClosestNode = 0;
     private int indexOfLastTargetNode = 0;
@@ -30,12 +31,14 @@ public class RobotController {
     private VFHPlus vfhPlus;
 
     /**
-     * Constructor which reads the path from the JSON file and the properties of the laser sensor.
+     * Constructor which reads the path from the JSON file and the properties of the laser sensor and sets the
+     * LOOK_AHEAD to lookAhead.
      * @param robot the robot.
      * @param pathFile path to the JSON file containing the path of the robot.
+     * @param lookAhead the lookahead distance of the robot.
      * @throws IOException
      */
-    public RobotController(Robot robot, String pathFile) throws IOException {
+    public RobotController(Robot robot, String pathFile, double lookAhead) throws IOException {
         this.robot = robot;
 
         path = new Path(Files.newInputStream(FileSystems.getDefault().getPath(pathFile)));
@@ -43,6 +46,18 @@ public class RobotController {
         robot.getResponse(laserPropertiesResponse);
         vfhPlus = new VFHPlus(laserPropertiesResponse.getStartAngle(), laserPropertiesResponse.getEndAngle(),
                 laserPropertiesResponse.getAngleIncrement());
+        LOOK_AHEAD = lookAhead;
+    }
+
+    /**
+     * Constructor which reads the path from the JSON file and the properties of the laser sensor and sets the
+     * LOOK_AHEAD distance to DEFAULT_LOOK_AHEAD.
+     * @param robot the robot.
+     * @param pathFile path to the JSON file containing the path of the robot.
+     * @throws IOException
+     */
+    public RobotController(Robot robot, String pathFile) throws IOException {
+        this(robot, pathFile, DEFAULT_LOOK_AHEAD);
     }
 
     /**
@@ -313,14 +328,4 @@ public class RobotController {
         }
         return sum;
     }
-
-    /**
-     * Sets a new look ahead.
-     * @param lookAhead the new look ahead.
-     */
-    public void setLookAhead(Double lookAhead) {
-        LOOK_AHEAD = lookAhead;
-        logger.error("LOOK_AHEAD: " + LOOK_AHEAD);
-    }
-
 }

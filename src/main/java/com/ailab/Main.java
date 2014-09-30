@@ -24,9 +24,10 @@ public class Main {
         }
 
         try {
-            controller = new RobotController(robot, args[0]);
             if (args.length > 1) {
-                controller.setLookAhead(Double.parseDouble(args[1]));
+                controller = new RobotController(robot, args[0],(Double.parseDouble(args[1])));
+            } else {
+                controller = new RobotController(robot, args[0]);
             }
             controller.start();
         } catch (IOException e) {
